@@ -22,7 +22,11 @@
 - **支持任意后缀**——不限于常见格式。直接输入任意后缀（如 `abc`），
   macOS 会自动解析为 UTI，即可为其指定默认打开应用。
 - **实时显示当前默认应用**——每个后缀都可查看当前默认应用的图标、名称、Bundle ID，
-  数据直接来自 LaunchServices。
+  解析方式**与 macOS 双击打开完全一致**（`NSWorkspace`），而非仅角色注册接口；
+  两者不一致时会明确警告。
+- **设置后回验**——写入后立即通过「双击同款解析」回读确认，未生效会明确提示。
+- **应用视图**——按应用查看后缀关系：它是哪些后缀的默认打开方式、可打开哪些后缀、
+  以及它声明的文档类型。
 - **区分「用户配置」与「系统默认」**——每个后缀的打开方式都会标记
   **用户配置**（用户显式设置，存储于 LaunchServices 用户偏好数据库）或
   **系统默认**（来自系统/应用安装时的声明），一眼看出哪些是你自己改的。
@@ -63,9 +67,10 @@ open DefaultApp.app
 `build.sh` 会同时编译 `.build/lsctl`（同一 LaunchServices 封装的命令行工具）：
 
 ```bash
-.build/lsctl get txt                     # 查看 .txt 当前默认应用
+.build/lsctl get txt                     # 查看 .txt 当前默认应用（双解析对比）
 .build/lsctl list png                    # 列出所有可打开 .png 的应用
 .build/lsctl set txt com.sublimetext.4 all
+.build/lsctl check                       # 列出「角色注册 ≠ 双击实际打开」的后缀
 ```
 
 ## 目录结构

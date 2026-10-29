@@ -23,7 +23,13 @@ Language / 语言: **English** | [简体中文](README.zh-CN.md)
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)
   and macOS resolves it to a UTI automatically; you can assign a default app to it.
 - **Live current default** — for every extension see the current default app
-  (icon, name, bundle ID), read straight from LaunchServices.
+  (icon, name, bundle ID), resolved **the same way macOS resolves a
+  double-click** (`NSWorkspace`), not just the role-registration API; warns
+  when the two disagree.
+- **Set with verification** — after writing, the change is read back through
+  the double-click resolution path to confirm it actually took effect.
+- **Apps view** — inspect app ↔ extension relations per app: which extensions
+  it owns as default, which it can open, and its declared document types.
 - **User vs. System marker** — each extension's handler is tagged
   **CUSTOM** (explicitly set by the user, stored in the LaunchServices user
   preference database) or **SYSTEM** (inferred from app declarations), so you
@@ -74,6 +80,8 @@ Changes take effect immediately — verified end-to-end by opening real files.
 .build/lsctl get txt                     # current default for .txt
 .build/lsctl list png                    # all apps that can open .png
 .build/lsctl set txt com.sublimetext.4 all
+.build/lsctl check                       # list extensions where the registered
+                                         # role differs from the real open path
 ```
 
 ## Project layout

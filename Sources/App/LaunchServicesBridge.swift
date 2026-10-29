@@ -97,6 +97,27 @@ enum LaunchServices {
         return appInfo(forBundleID: bid)
     }
 
+    /// 与双击行为一致的默认打开应用解析（临时文件 + NSWorkspace）。
+    /// 注意：此路径与 LSCopyDefaultRoleHandlerForContentType 可能不一致——
+    /// 真实打开以此为准。
+    static func actualDefault(forExtension ext: String) -> AppInfo? {
+        guard !ext.isEmpty else { return nil }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory()
+            + "defaultapp-probe-\(UUID().uuidString).\(ext)")
+        try? Data().write(to: tmp)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        guard let url = NSWorkspace.shared.urlForApplication(toOpen: tmp) else { return nil }
+        guard let bid = Bundle(url: url)?.bundleIdentifier else { return nil }
+        return appInfo(forBundleID: bid)
+    }
+
+    /// 角色注册值与真实打开值是否不一致。
+    static func hasMismatch(forExtension ext: String) -> Bool {
+        let role = defaultHandlerBundleID(forExtension: ext) ?? ""
+        let actual = actualDefault(forExtension: ext)?.bundleID ?? ""
+        return !actual.isEmpty && role != actual
+    }
+
     /// All apps that declared they can handle the extension (editor + viewer roles,
     /// deduped, current default first if it exists).
     static func handlers(forExtension ext: String) -> [AppInfo] {

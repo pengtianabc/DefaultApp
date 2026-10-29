@@ -8,6 +8,7 @@ struct DetailView: View {
 
     @State private var role: HandlerRole = .all
     @State private var current: AppInfo?
+    @State private var roleBased: AppInfo?
     @State private var candidates: [AppInfo] = []
     @State private var pickedID: String?
     @State private var errorMessage: String?
@@ -74,7 +75,26 @@ struct DetailView: View {
             } else {
                 noDefaultHint
             }
+
+            if let roleBased, let current, roleBased.bundleID != current.bundleID {
+                mismatchBanner(roleApp: roleBased)
+            }
         }
+    }
+
+    private func mismatchBanner(roleApp: AppInfo) -> some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(i18n.t(.mismatchWarning, roleApp.name))
+                    .font(.callout)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 10).fill(.orange.opacity(0.1)))
     }
 
     private func currentCard(app: AppInfo) -> some View {
@@ -245,7 +265,9 @@ struct DetailView: View {
 
     @MainActor
     private func reload() async {
+        // current 使用与双击一致的解析；roleBased 记录角色注册值用于一致性对比
         current = state.currentDefault(for: entry.ext)
+        roleBased = LaunchServices.defaultHandler(forExtension: entry.ext)
         candidates = state.candidates(for: entry.ext)
         pickedID = nil
     }

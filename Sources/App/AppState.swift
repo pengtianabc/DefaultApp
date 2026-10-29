@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// 默认打开方式的来源：无默认 / 用户显式配置 / 系统（应用声明）默认。
@@ -5,6 +6,18 @@ enum SourceKind {
     case none
     case user
     case system
+}
+
+/// 应用 ↔ 后缀关系（用于「应用」视图）。
+struct AppRelation: Identifiable, Hashable {
+    let bundleID: String
+    var info: AppInfo
+    var supports: [String]   // 出现在候选列表中的后缀
+    var owns: [String]       // 实际默认打开（双击行为）的后缀
+
+    var id: String { bundleID }
+    static func == (lhs: AppRelation, rhs: AppRelation) -> Bool { lhs.bundleID == rhs.bundleID }
+    func hash(into hasher: inout Hasher) { hasher.combine(bundleID) }
 }
 
 @MainActor
@@ -45,6 +58,8 @@ final class AppState {
 
     /// LaunchServices 用户覆盖表快照（用于区分用户配置 / 系统默认）。
     private(set) var userOverrides = UserOverrides.Snapshot()
+    /// 应用 ↔ 后缀关系索引（应用视图数据源）。
+    private(set) var appIndex: [AppRelation] = []
     /// 本工具设置过的后缀（补充信息源，覆盖 plist 读取失败的情况）。
     private var ownSet: Set<String>
 
@@ -59,6 +74,7 @@ final class AppState {
         statusMessage = I18n.shared.t(.statusWelcome)
         userOverrides = UserOverrides.load()
         load()
+        rebuildAppIndex()
     }
 
     // MARK: - 增删
@@ -98,12 +114,14 @@ final class AppState {
         entries.sort { $0.ext.localizedCaseInsensitiveCompare($1.ext) == .orderedAscending }
         selectedID = entries.last(where: { exts.contains($0.ext) })?.id
         save()
+        rebuildAppIndex()
     }
 
     func remove(_ entry: Entry) {
         entries.removeAll { $0.id == entry.id }
         if selectedID == entry.id { selectedID = entries.first?.id }
         save()
+        rebuildAppIndex()
         setStatus(i18n.t(.statusRemoved, ".\(entry.ext)"), success: true)
     }
 
@@ -112,11 +130,14 @@ final class AppState {
     func refresh() {
         userOverrides = UserOverrides.load()
         refreshToken = UUID()
+        rebuildAppIndex()
         setStatus(i18n.t(.statusReloaded), success: true)
     }
 
+    /// 当前默认：优先使用与双击一致的解析路径；无结果时回退角色查询。
     func currentDefault(for ext: String) -> AppInfo? {
-        LaunchServices.defaultHandler(forExtension: ext)
+        LaunchServices.actualDefault(forExtension: ext)
+            ?? LaunchServices.defaultHandler(forExtension: ext)
     }
 
     func candidates(for ext: String) -> [AppInfo] {
@@ -139,18 +160,88 @@ final class AppState {
 
     // MARK: - 设置
 
+    /// 设置默认打开方式，并用「双击同款解析」回验是否真实生效。
+    @discardableResult
     func setDefault(bundleID: String, for ext: String, role: HandlerRole) -> Bool {
-        let ok = LaunchServices.setDefaultHandler(bundleID: bundleID, forExtension: ext, role: role)
         let appName = LaunchServices.appInfo(forBundleID: bundleID).name
+        let ok = LaunchServices.setDefaultHandler(bundleID: bundleID, forExtension: ext, role: role)
         if ok {
             ownSet.insert(ext.lowercased())
             UserDefaults.standard.set(Array(ownSet), forKey: ownSetKey)
             userOverrides = UserOverrides.load()
+        }
+        // 回验：真实打开路径是否已指向目标应用
+        let actual = LaunchServices.actualDefault(forExtension: ext)
+        let aligned = actual?.bundleID == bundleID
+        if ok && aligned {
             setStatus(i18n.t(.statusSetOk, ".\(ext)", appName), success: true)
+        } else if ok {
+            let actualName = actual?.name ?? i18n.t(.unknownApp)
+            setStatus(i18n.t(.statusSetUnconfirmed, ".\(ext)", appName, actualName), success: false)
         } else {
             setStatus(i18n.t(.statusSetFail, appName, ".\(ext)"), success: false)
         }
+        rebuildAppIndex()
         return ok
+    }
+
+    // MARK: - 应用 ↔ 后缀索引
+
+    /// 重建应用关系索引（候选 + 实际默认，基于当前后缀列表）。
+    func rebuildAppIndex() {
+        var map: [String: (sup: Set<String>, own: Set<String>)] = [:]
+        for entry in entries {
+            for candidate in candidates(for: entry.ext) {
+                map[candidate.bundleID, default: ([], [])].sup.insert(entry.ext)
+            }
+            if let owner = currentDefault(for: entry.ext) {
+                map[owner.bundleID, default: ([], [])].own.insert(entry.ext)
+            }
+        }
+        appIndex = map
+            .map { AppRelation(bundleID: $0.key, info: LaunchServices.appInfo(forBundleID: $0.key),
+                               supports: $0.value.sup.sorted(), owns: $0.value.own.sorted()) }
+            .sorted { $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending }
+    }
+
+    /// 把任意应用加入索引（仅展示其声明的类型，不关联列表后缀）。
+    func addInspectedApp(_ bid: String) {
+        guard !appIndex.contains(where: { $0.bundleID == bid }) else { return }
+        let relation = AppRelation(bundleID: bid, info: LaunchServices.appInfo(forBundleID: bid),
+                                   supports: [], owns: [])
+        appIndex.append(relation)
+        appIndex.sort { $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending }
+    }
+
+    /// 应用声明的文档类型（Info.plist CFBundleDocumentTypes / UT*TypeDeclarations）。
+    func declaredTypes(forBundleID bid: String) -> [String] {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+              let bundle = Bundle(url: url) else { return [] }
+        let plist: [String: Any] = bundle.infoDictionary ?? [:]
+        var result: [String] = []
+        var seen = Set<String>()
+        for group in ["CFBundleDocumentTypes", "UTExportedTypeDeclarations", "UTImportedTypeDeclarations"] {
+            guard let types = plist[group] as? [[String: Any]] else { continue }
+            for type in types {
+                var uti: String?
+                if let u = type["UTTypeIdentifier"] as? String { uti = u }
+                if let spec = type["UTTypeTagSpecification"] as? [String: Any],
+                   let exts = spec["public.filename-extension"] as? [String] {
+                    for e in exts {
+                        if let u = uti, !seen.contains(u) { seen.insert(u); result.append(u) }
+                        else if uti == nil { result.append(".\(e)") }
+                    }
+                } else if let u = uti, !seen.contains(u) {
+                    seen.insert(u)
+                    result.append(u)
+                }
+                if type["LSItemContentTypes"] is [String], let u = uti, !seen.contains(u) {
+                    seen.insert(u)
+                    result.append(u)
+                }
+            }
+        }
+        return result
     }
 
     // MARK: - 工具

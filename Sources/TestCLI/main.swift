@@ -25,11 +25,35 @@ func run() -> Int32 {
             return 1
         }
         print("uti: \(uti)")
-        if let app = LaunchServices.defaultHandler(forExtension: args[2]) {
-            print("default: \(app.name) [\(app.bundleID)] \(app.url?.path ?? "")")
-            return 0
+        if let app = LaunchServices.actualDefault(forExtension: args[2]) {
+            print("actual-open(default): \(app.name) [\(app.bundleID)] \(app.url?.path ?? "")")
+        } else {
+            print("actual-open(default): (none)")
         }
-        print("default: (none)")
+        if let app = LaunchServices.defaultHandler(forExtension: args[2]) {
+            print("role-query: \(app.name) [\(app.bundleID)]")
+        } else {
+            print("role-query: (none)")
+        }
+        if LaunchServices.hasMismatch(forExtension: args[2]) {
+            print("⚠️ MISMATCH: 双击实际打开与角色注册不一致")
+        }
+        return 0
+
+    case "check":
+        // 扫描后缀目录，列出「角色注册 ≠ 双击实际打开」的后缀
+        let catalog = ExtensionCatalog.extensions(for: .all)
+        var count = 0
+        for ext in catalog {
+            guard let uti = LaunchServices.uti(forExtension: ext) else { continue }
+            let role = LaunchServices.defaultHandler(forExtension: ext)
+            let actual = LaunchServices.actualDefault(forExtension: ext)
+            if role?.bundleID != actual?.bundleID {
+                count += 1
+                print(".\(ext)\trole=\(role?.bundleID ?? "(none)")\topen=\(actual?.bundleID ?? "(none)")")
+            }
+        }
+        print("-- \(count) 个不一致 / \(catalog.count)")
         return 0
 
     case "list":

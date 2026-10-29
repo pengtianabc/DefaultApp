@@ -31,6 +31,7 @@ echo "==> 编译 lsctl 测试 CLI"
 swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
     -o "$OUT/lsctl" \
     Sources/App/LaunchServicesBridge.swift \
+    Sources/App/ExtensionCatalog.swift \
     Sources/TestCLI/main.swift
 
 echo "==> 打包 $APP_DIR"

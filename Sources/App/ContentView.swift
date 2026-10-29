@@ -8,23 +8,42 @@ struct ContentView: View {
     @State private var query = ""
     @State private var sourceFilter: SourceFilter = .all
     @State private var showQuickAdd = false
+    @State private var mode: ViewMode = .extensions
 
     private enum SourceFilter: String, CaseIterable, Identifiable {
         case all, user, system
         var id: String { rawValue }
     }
 
+    private enum ViewMode: String {
+        case extensions, apps
+    }
+
     var body: some View {
         @Bindable var state = state
         @Bindable var i18n = i18n
-        HSplitView {
-            sidebar
-                .frame(minWidth: 280, maxWidth: 400)
-            detailArea
-                .frame(minWidth: 600)
-                .layoutPriority(1)
+        VStack(spacing: 0) {
+            Picker("", selection: $mode) {
+                Text(i18n.t(.tabExtensions)).tag(ViewMode.extensions)
+                Text(i18n.t(.tabApps)).tag(ViewMode.apps)
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 220)
+            .padding(.vertical, 8)
+            .labelsHidden()
+
+            switch mode {
+            case .extensions:
+                extensionsSplit
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .apps:
+                AppsView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            statusBar
         }
-        .frame(minWidth: 940, minHeight: 580)
+        .frame(minWidth: 940, minHeight: 620)
         .tint(.indigo)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -39,6 +58,16 @@ struct ContentView: View {
                 .help(i18n.t(.languageLabel))
                 .frame(width: 42)
             }
+        }
+    }
+
+    private var extensionsSplit: some View {
+        HSplitView {
+            sidebar
+                .frame(minWidth: 280, maxWidth: 400)
+            detailArea
+                .frame(minWidth: 600)
+                .layoutPriority(1)
         }
     }
 
