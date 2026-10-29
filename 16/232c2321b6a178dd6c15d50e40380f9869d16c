@@ -1,0 +1,18 @@
+README.md
+  h_53aea25a6c6376 31-33
+README.zh-CN.md
+  h_53aea25a6c6376 27-28
+Sources/App/AppState.swift
+  h_53aea25a6c6376 19-37,53,171-186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "16232c2321b6a178dd6c15d50e40380f9869d16c",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
