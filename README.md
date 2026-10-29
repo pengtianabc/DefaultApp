@@ -18,6 +18,17 @@ Language / 语言: **English** | [简体中文](README.zh-CN.md)
 </p>
 <p align="center"><i>Main window (Simplified Chinese UI; English & “Follow System” built in)</i></p>
 
+## Install & First Launch
+
+Download from [Releases](https://github.com/pengtianabc/DefaultApp/releases) (or a
+friend may send it to you) and drag `DefaultApp.app` into **Applications**.
+
+> **Blocked by “cannot be opened” on first launch?** That is macOS Gatekeeper,
+> not a problem with your Mac — the app is ad-hoc signed and not notarized yet.
+> Just once: **Control-click (or right-click) the app → Open → Open again**,
+> or allow it in **System Settings → Privacy & Security**. It runs normally
+> after that.
+
 ## Features
 
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)

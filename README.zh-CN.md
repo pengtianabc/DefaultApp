@@ -17,6 +17,16 @@
 </p>
 <p align="center"><i>主界面（简体中文；内置 English / 跟随系统切换）</i></p>
 
+## 安装与首次打开
+
+从 [Releases](https://github.com/pengtianabc/DefaultApp/releases) 下载（或朋友转发给你）后，
+把 `DefaultApp.app` 拖进「应用程序」文件夹。
+
+> **首次打开提示「无法打开」？** 这不是你的电脑有问题，而是 macOS 的
+> Gatekeeper 拦截了未经苹果公证的应用。只需一次：
+> **按住 Control 点按（或右键）App → 「打开」→ 再点「打开」**，
+> 或在「系统设置 → 隐私与安全性」中点「仍要打开」。之后一切正常。
+
 ## 功能
 
 - **支持任意后缀**——不限于常见格式。直接输入任意后缀（如 `abc`），
