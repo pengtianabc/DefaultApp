@@ -45,7 +45,16 @@ struct ContentView: View {
         }
         .frame(minWidth: 940, minHeight: 620)
         .tint(.indigo)
-        .task { GitHubRelease.shared.check() }
+        .task {
+            if Snapshotter.isActive {
+                state.selectedID = state.entries.first(where: { $0.ext == "md" })?.id
+                Snapshotter.stage()
+                try? await Task.sleep(for: .milliseconds(1600))
+                Snapshotter.captureAndExit()
+            } else {
+                GitHubRelease.shared.check()
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 githubButton

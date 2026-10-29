@@ -309,6 +309,13 @@ struct DetailView: View {
         roleAll = LaunchServices.roleAllClaimant(forExtension: entry.ext)
         candidates = state.candidates(for: entry.ext)
         pickedID = nil
+        // 截图模式：展示成功提示条，演示操作反馈效果
+        if Snapshotter.isActive {
+            try? await Task.sleep(for: .milliseconds(300))
+            if let current {
+                showToast(Toast(kind: .success, message: i18n.t(.toastSetOk, entry.ext, current.name)))
+            }
+        }
     }
 
     private func chooseApp() {
