@@ -1,0 +1,24 @@
+.github/workflows/ci.yml
+  h_53aea25a6c6376 15,18,20-21
+.github/workflows/release.yml
+  h_53aea25a6c6376 31,39
+README.md
+  h_53aea25a6c6376 66,104,106-110,113,116,120-129,132-138,151
+README.zh-CN.md
+  h_53aea25a6c6376 57,90,92,94,97,100,104-109,115-119,132
+Sources/TestCLI/main.swift
+  h_53aea25a6c6376 3,5-8,14,21,62,74
+build.sh
+  h_53aea25a6c6376 2,30,32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c88b42a49daef7bcaa03929c38fa5a8441b10cb3",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
