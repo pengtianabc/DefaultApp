@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app
+        run: ./build.sh
+
+      - name: Package DMG (with Applications symlink)
+        run: |
+          mkdir -p dist
+          cp -R MacDefaultAppMgr.app dist/
+          ln -s /Applications dist/Applications
+          hdiutil create -volname "MacDefaultAppMgr" -srcfolder dist -ov -format UDZO MacDefaultAppMgr.dmg
+
+      - name: Package ZIP
+        run: ditto -c -k --keepParent MacDefaultAppMgr.app MacDefaultAppMgr.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            MacDefaultAppMgr.dmg
+            MacDefaultAppMgr.zip
+          generate_release_notes: true

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app & test CLI
+        run: ./build.sh
+
+      - name: Smoke test LaunchServices bridge
+        run: |
+          ./.build/lsctl get txt
+          ./.build/lsctl list png
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacDefaultAppMgr-app
+          path: MacDefaultAppMgr.app
+          if-no-files-found: error
