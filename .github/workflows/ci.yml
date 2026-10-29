@@ -23,6 +23,6 @@ jobs:
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DefType-app
-          path: DefType.app
+          name: DefaultApp-app
+          path: DefaultApp.app
           if-no-files-found: error

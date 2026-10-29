@@ -1,6 +1,6 @@
 import AppKit
 
-// 生成 DefType.app 的应用图标：
+// 生成 DefaultApp.app 的应用图标：
 // 蓝紫渐变圆角底 + 白色折角文档 + 右下角绿色对勾徽标（“已设为默认”的隐喻）。
 // 用法: icongen <输出目录.iconset>
 

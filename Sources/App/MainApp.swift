@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DefTypeApp: App {
+struct DefaultApp: App {
     @State private var state = AppState()
 
     var body: some Scene {

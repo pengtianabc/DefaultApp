@@ -20,17 +20,17 @@ jobs:
       - name: Package DMG (with Applications symlink)
         run: |
           mkdir -p dist
-          cp -R DefType.app dist/
+          cp -R DefaultApp.app dist/
           ln -s /Applications dist/Applications
-          hdiutil create -volname "DefType" -srcfolder dist -ov -format UDZO DefType.dmg
+          hdiutil create -volname "DefaultApp" -srcfolder dist -ov -format UDZO DefaultApp.dmg
 
       - name: Package ZIP
-        run: ditto -c -k --keepParent DefType.app DefType.zip
+        run: ditto -c -k --keepParent DefaultApp.app DefaultApp.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            DefType.dmg
-            DefType.zip
+            DefaultApp.dmg
+            DefaultApp.zip
           generate_release_notes: true
