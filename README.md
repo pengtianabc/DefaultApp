@@ -63,7 +63,7 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
 ## Build & Run
 
 ```bash
-./build.sh          # builds DefaultApp.app + lsctl test CLI into .build/
+./build.sh          # builds DefaultApp.app + defaultapp CLI into .build/
 open DefaultApp.app
 ```
 
@@ -101,17 +101,40 @@ resolve differently than expected. Setting the default with the **All** role in
 this app overwrites all three slots at once; the detail pane also shows who
 holds the "all roles" slot if it ever disagrees.
 
-## Test CLI
+## CLI: `defaultapp`
 
-`build.sh` also builds `.build/lsctl`, a CLI over the same LaunchServices bridge:
+Beyond the GUI, the project ships a fully functional command-line tool named
+`defaultapp`, sharing the same LaunchServices bridge as the app — anything the
+app can do also works in a terminal, handy for remote machines and scripting.
+`./build.sh` compiles it to `.build/defaultapp`, and releases also publish a
+ready-to-use binary.
 
 ```bash
-.build/lsctl get txt                     # current default for .txt
-.build/lsctl list png                    # all apps that can open .png
-.build/lsctl set txt com.sublimetext.4 all
-.build/lsctl check                       # list extensions where the registered
-                                         # role differs from the real open path
+./build.sh   # builds the app and defaultapp
+
+# optional: put it on your PATH
+install -m 755 .build/defaultapp /usr/local/bin/defaultapp
 ```
+
+```bash
+defaultapp get md                      # current default app for .md (double-click
+                                       # resolution + role registration compared;
+                                       # warns with ⚠️ MISMATCH when they disagree)
+defaultapp list png                    # every app that declared it can open .png
+defaultapp set txt com.sublimetext.4   # set default (all roles, same as the
+                                       # app's "Set as Default", immediate)
+defaultapp set txt com.sublimetext.4 viewer   # or a single role: viewer|editor|all
+defaultapp check                       # scan all common extensions and list the
+                                       # ones where the registered role differs
+                                       # from the actual double-click open target
+```
+
+> **CLI downloaded from Releases blocked on first run?** Binaries downloaded via
+> a browser carry the quarantine xattr, so the shell may report
+> `cannot be opened` / `killed`. Run
+> `xattr -d com.apple.quarantine defaultapp` once (use the path you installed
+> it to, e.g. `/usr/local/bin/defaultapp`). Binaries built from a `git clone`
+> are unaffected.
 
 ## Project layout
 
@@ -125,7 +148,7 @@ Sources/App/                 app sources (SwiftUI)
   AppState.swift             model, persistence, user/system source detection
   LaunchServicesBridge.swift LaunchServices wrappers + UserOverrides parser
 Sources/IconGen/             app-icon generator (compiled & run by build.sh)
-Sources/TestCLI/             lsctl test CLI
+Sources/TestCLI/             defaultapp command-line tool
 build.sh                     one-shot build (icon → app → CLI → .app bundle)
 .github/workflows/           CI + release workflows
 ```

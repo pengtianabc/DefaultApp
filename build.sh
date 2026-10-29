@@ -1,5 +1,5 @@
 #!/bin/bash
-# 构建 DefaultApp.app 与 lsctl 测试 CLI，输出到 .build/
+# 构建 DefaultApp.app 与 defaultapp 命令行工具，输出到 .build/
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -27,9 +27,9 @@ swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
     -o "$OUT/$APP" \
     Sources/App/*.swift
 
-echo "==> 编译 lsctl 测试 CLI"
+echo "==> 编译 defaultapp 命令行工具"
 swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
-    -o "$OUT/lsctl" \
+    -o "$OUT/defaultapp" \
     Sources/App/LaunchServicesBridge.swift \
     Sources/App/ExtensionCatalog.swift \
     Sources/TestCLI/main.swift

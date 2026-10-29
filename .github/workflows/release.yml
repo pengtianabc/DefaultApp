@@ -27,10 +27,14 @@ jobs:
       - name: Package ZIP
         run: ditto -c -k --keepParent DefaultApp.app DefaultApp.zip
 
+      - name: Stage CLI binary
+        run: cp .build/defaultapp defaultapp && chmod +x defaultapp
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             DefaultApp.dmg
             DefaultApp.zip
+            defaultapp
           generate_release_notes: true

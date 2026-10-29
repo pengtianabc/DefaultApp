@@ -1,23 +1,24 @@
 import Foundation
 
-// Test harness for the LaunchServices bridge.
+// defaultapp — DefaultApp 的命令行工具（与 App 共用同一 LaunchServices 封装）。
 // Usage:
-//   lsctl get <ext>
-//   lsctl list <ext>
-//   lsctl set <ext> <bundleID> [viewer|editor|all]
+//   defaultapp get <ext>
+//   defaultapp list <ext>
+//   defaultapp set <ext> <bundleID> [viewer|editor|all]
+//   defaultapp check
 
 @MainActor
 func run() -> Int32 {
     let args = CommandLine.arguments
     guard args.count >= 2 else {
-        FileHandle.standardError.write(Data("usage: lsctl <get|list|set> <ext> [bundleID] [viewer|editor|all]\n".utf8))
+        FileHandle.standardError.write(Data("usage: defaultapp <get|list|set|check> <ext> [bundleID] [viewer|editor|all]\n".utf8))
         return 2
     }
 
     switch args[1] {
     case "get":
         guard args.count >= 3 else {
-            FileHandle.standardError.write(Data("usage: lsctl get <ext>\n".utf8))
+            FileHandle.standardError.write(Data("usage: defaultapp get <ext>\n".utf8))
             return 2
         }
         guard let uti = LaunchServices.uti(forExtension: args[2]) else {
@@ -58,7 +59,7 @@ func run() -> Int32 {
 
     case "list":
         guard args.count >= 3 else {
-            FileHandle.standardError.write(Data("usage: lsctl list <ext>\n".utf8))
+            FileHandle.standardError.write(Data("usage: defaultapp list <ext>\n".utf8))
             return 2
         }
         let apps = LaunchServices.handlers(forExtension: args[2])
@@ -70,7 +71,7 @@ func run() -> Int32 {
 
     case "set":
         guard args.count >= 4 else {
-            FileHandle.standardError.write(Data("usage: lsctl set <ext> <bundleID> [viewer|editor|all]\n".utf8))
+            FileHandle.standardError.write(Data("usage: defaultapp set <ext> <bundleID> [viewer|editor|all]\n".utf8))
             return 2
         }
         let role = HandlerRole(rawValue: args.count >= 5 ? args[4] : "all") ?? .all

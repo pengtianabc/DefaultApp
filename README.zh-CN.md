@@ -54,7 +54,7 @@
 ## 构建与运行
 
 ```bash
-./build.sh          # 构建 DefaultApp.app 与 lsctl 测试 CLI，输出到 .build/
+./build.sh          # 构建 DefaultApp.app 与 defaultapp 命令行工具，输出到 .build/
 open DefaultApp.app
 ```
 
@@ -87,16 +87,35 @@ LaunchServices 的默认打开方式按「角色」分槽位存储（查看 / �
 本工具选择「全部」角色设置时会一次性覆盖三个槽位，彻底解决这个问题；
 详情页也会标出「所有角色」槽位被谁占用。
 
-## 测试 CLI
+## 命令行工具 `defaultapp`
 
-`build.sh` 会同时编译 `.build/lsctl`（同一 LaunchServices 封装的命令行工具）：
+除了图形界面，本项目还带一个功能完整的命令行工具 `defaultapp`，与 App 共用同一套
+LaunchServices 封装——App 里能做的事，终端里都能做，适合远程管理或写进脚本。
+`./build.sh` 会把它编译到 `.build/defaultapp`，Release 页面也提供可直接下载的二进制。
 
 ```bash
-.build/lsctl get txt                     # 查看 .txt 当前默认应用（双解析对比）
-.build/lsctl list png                    # 列出所有可打开 .png 的应用
-.build/lsctl set txt com.sublimetext.4 all
-.build/lsctl check                       # 列出「角色注册 ≠ 双击实际打开」的后缀
+./build.sh   # 构建 App 与 defaultapp
+
+# 可选：安装到系统路径，直接当命令用
+install -m 755 .build/defaultapp /usr/local/bin/defaultapp
 ```
+
+```bash
+defaultapp get md                      # 查看 .md 的默认打开应用（真实双击解析 + 角色注册双对比，
+                                       # 不一致时会给出 ⚠️ MISMATCH 警告）
+defaultapp list png                    # 列出所有声明可打开 .png 的应用（bundle id + 名称）
+defaultapp set txt com.sublimetext.4   # 设置默认打开方式（默认全部角色）
+defaultapp set txt com.sublimetext.4 viewer   # 也可只设查看 / 编辑 / all 角色
+defaultapp check                       # 全量扫描常用后缀，列出「角色注册 ≠ 双击实际打开」的项
+```
+
+`set` 与 App 内的「设为默认打开方式」完全一致：写入查看/编辑/所有角色全部槽位，
+立即生效；可用 `get` 回验。
+
+> **从 Release 下载的 CLI 首次运行被拦截？** 浏览器下载的二进制会带隔离标记，
+> 终端里可能报 `cannot be opened` / `killed`。运行一次
+> `xattr -d com.apple.quarantine defaultapp`（若已放到 `/usr/local/bin` 则对该路径执行）
+> 即可。从源码 `git clone` 构建的不会有此问题。
 
 ## 目录结构
 
@@ -110,7 +129,7 @@ Sources/App/                 应用源码（SwiftUI）
   AppState.swift             数据模型、持久化、用户/系统来源判定
   LaunchServicesBridge.swift LaunchServices 封装 + 用户覆盖表解析
 Sources/IconGen/             应用图标生成器（build.sh 自动编译运行）
-Sources/TestCLI/             lsctl 测试 CLI
+Sources/TestCLI/             defaultapp 命令行工具
 build.sh                     一键构建（图标 → 应用 → CLI → 打包 .app）
 .github/workflows/           CI 与 Release 工作流
 ```
