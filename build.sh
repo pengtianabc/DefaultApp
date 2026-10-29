@@ -22,7 +22,8 @@ rm -rf "$ICONSET"
 iconutil -c icns -o "$OUT/$APP.icns" "$ICONSET"
 
 echo "==> 编译 $APP"
-swiftc -O -sdk "$SDK" -target "$TARGET" \
+# -swift-version 5：保持跨 SDK（macOS 14/15）一致的并发检查行为
+swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
     -o "$OUT/$APP" \
     Sources/App/*.swift
 
