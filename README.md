@@ -1,4 +1,4 @@
-# MacDefaultAppMgr (Default Apps / 默认打开方式)
+# DefType (Default Apps / 默认打开方式)
 
 A lightweight macOS app to view and change the default application for **any** file
 extension — the equivalent of Windows Explorer's "Open with → Always use this app",
@@ -35,8 +35,8 @@ Language / 语言: **English** | [简体中文](README.zh-CN.md)
 ## Build & Run
 
 ```bash
-./build.sh          # builds MacDefaultAppMgr.app + lsctl test CLI into .build/
-open MacDefaultAppMgr.app
+./build.sh          # builds DefType.app + lsctl test CLI into .build/
+open DefType.app
 ```
 
 Requirements: macOS 14+, Xcode Command Line Tools. No third-party dependencies;
@@ -84,8 +84,8 @@ build.sh                     one-shot build (icon → app → CLI → .app bundl
 
 ## Download
 
-Prebuilt `MacDefaultAppMgr.dmg` / `.zip` are attached to
-[GitHub Releases](https://github.com/pengtianabc/MacDefaultAppMgr/releases)
+Prebuilt `DefType.dmg` / `.zip` are attached to
+[GitHub Releases](https://github.com/pengtianabc/DefType/releases)
 (via CI — see below).
 
 ## CI / Release

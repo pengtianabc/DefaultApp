@@ -1,4 +1,4 @@
-# MacDefaultAppMgr（默认打开方式）
+# DefType（默认打开方式）
 
 一个用于查看和修改 macOS **任意**文件后缀默认打开应用的轻量工具，
 相当于 Windows 资源管理器的「打开方式 → 始终使用此应用」，直接基于 LaunchServices 实现。
@@ -30,8 +30,8 @@
 ## 构建与运行
 
 ```bash
-./build.sh          # 构建 MacDefaultAppMgr.app 与 lsctl 测试 CLI，输出到 .build/
-open MacDefaultAppMgr.app
+./build.sh          # 构建 DefType.app 与 lsctl 测试 CLI，输出到 .build/
+open DefType.app
 ```
 
 要求：macOS 14+ 与 Xcode 命令行工具。无第三方依赖，应用已做临时签名（ad-hoc）。
@@ -77,8 +77,8 @@ build.sh                     一键构建（图标 → 应用 → CLI → 打包
 
 ## 下载
 
-[GitHub Releases](https://github.com/pengtianabc/MacDefaultAppMgr/releases)
-中提供 CI 构建好的 `MacDefaultAppMgr.dmg` 与 `.zip`。
+[GitHub Releases](https://github.com/pengtianabc/DefType/releases)
+中提供 CI 构建好的 `DefType.dmg` 与 `.zip`。
 
 ## CI / 发布
 

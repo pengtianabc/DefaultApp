@@ -20,17 +20,17 @@ jobs:
       - name: Package DMG (with Applications symlink)
         run: |
           mkdir -p dist
-          cp -R MacDefaultAppMgr.app dist/
+          cp -R DefType.app dist/
           ln -s /Applications dist/Applications
-          hdiutil create -volname "MacDefaultAppMgr" -srcfolder dist -ov -format UDZO MacDefaultAppMgr.dmg
+          hdiutil create -volname "DefType" -srcfolder dist -ov -format UDZO DefType.dmg
 
       - name: Package ZIP
-        run: ditto -c -k --keepParent MacDefaultAppMgr.app MacDefaultAppMgr.zip
+        run: ditto -c -k --keepParent DefType.app DefType.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            MacDefaultAppMgr.dmg
-            MacDefaultAppMgr.zip
+            DefType.dmg
+            DefType.zip
           generate_release_notes: true

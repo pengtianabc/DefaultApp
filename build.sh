@@ -1,9 +1,9 @@
 #!/bin/bash
-# 构建 MacDefaultAppMgr.app 与 lsctl 测试 CLI，输出到 .build/
+# 构建 DefType.app 与 lsctl 测试 CLI，输出到 .build/
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="MacDefaultAppMgr"
+APP="DefType"
 OUT=".build"
 APP_DIR="$APP.app"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
@@ -58,15 +58,15 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleExecutable</key>
-    <string>MacDefaultAppMgr</string>
+    <string>DefType</string>
     <key>CFBundleIconFile</key>
-    <string>MacDefaultAppMgr</string>
+    <string>DefType</string>
     <key>CFBundleIdentifier</key>
-    <string>com.pt.MacDefaultAppMgr</string>
+    <string>com.pt.DefType</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>MacDefaultAppMgr</string>
+    <string>DefType</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

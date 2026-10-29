@@ -1,5 +1,5 @@
 .build/
-MacDefaultAppMgr.app/
+DefType.app/
 .DS_Store
 *.dmg
 *.zip
