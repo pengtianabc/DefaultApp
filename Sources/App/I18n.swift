@@ -47,6 +47,8 @@ final class I18n {
         case mismatchWarning, statusSetUnconfirmed, unknownApp
         case toastSetOk, toastSetUnconfirmed, toastSetFail
         case mismatchRoleAll
+        case sortName, sortOwns, sortSupports
+        case addExtButton, addExtAlertTitle, addExtAlertMsg, cancel
     }
 
     static let shared = I18n()
@@ -184,5 +186,12 @@ final class I18n {
         .toastSetUnconfirmed: [.zh: "已写入，但系统仍将 .%@ 解析为「%@」，可能被其他应用抢占", .en: "Written, but .%@ still resolves to “%@” — another app may be overriding it"],
         .toastSetFail: [.zh: "设置失败：无法将「%@」设为 .%@ 的默认打开方式", .en: "Failed to set “%@” as the default for .%@"],
         .mismatchRoleAll: [.zh: "「所有角色」槽位被 %@ 占用，与当前默认不一致，重新「设为默认打开方式」可一并覆盖。", .en: "The “all roles” slot is held by %@, which disagrees with the current default. Use “Set as Default” to overwrite it."],
+        .sortName: [.zh: "按名称", .en: "By Name"],
+        .sortOwns: [.zh: "默认后缀数", .en: "By Defaults"],
+        .sortSupports: [.zh: "可打开后缀数", .en: "By Supports"],
+        .addExtButton: [.zh: "添加后缀…", .en: "Add Extension…"],
+        .addExtAlertTitle: [.zh: "添加后缀", .en: "Add Extension"],
+        .addExtAlertMsg: [.zh: "输入要交给「%@」打开的后缀（不含点）。后缀会加入文件后缀列表，并立即设为由该应用打开。", .en: "Enter the extension (without the dot) that “%@” should open. It is added to the extensions list and set to open with this app immediately."],
+        .cancel: [.zh: "取消", .en: "Cancel"],
     ]
 }

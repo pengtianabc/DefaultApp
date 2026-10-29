@@ -10,12 +10,38 @@ struct AppsView: View {
 
     @State private var selectedID: String?
     @State private var query = ""
+    @State private var sort: AppSort = .name
+    @State private var showAddExt = false
+    @State private var newExt = ""
+
+    /// 应用列表排序方式。
+    enum AppSort: String, CaseIterable, Identifiable {
+        case name, owns, supports
+        var id: String { rawValue }
+    }
 
     private var visibleApps: [AppRelation] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !q.isEmpty else { return state.appIndex }
-        return state.appIndex.filter {
+        let filtered = q.isEmpty ? state.appIndex : state.appIndex.filter {
             $0.info.name.lowercased().contains(q) || $0.bundleID.lowercased().contains(q)
+        }
+        switch sort {
+        case .name:
+            return filtered.sorted {
+                $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending
+            }
+        case .owns:
+            return filtered.sorted {
+                ($0.owns.count != $1.owns.count)
+                    ? $0.owns.count > $1.owns.count
+                    : $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending
+            }
+        case .supports:
+            return filtered.sorted {
+                ($0.supports.count != $1.supports.count)
+                    ? $0.supports.count > $1.supports.count
+                    : $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending
+            }
         }
     }
 
@@ -43,6 +69,7 @@ struct AppsView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                sortPicker
             }
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
@@ -77,6 +104,26 @@ struct AppsView: View {
         }
     }
 
+    private var sortPicker: some View {
+        Picker("", selection: $sort) {
+            ForEach(AppSort.allCases) { option in
+                Text(sortTitle(option)).tag(option)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .fixedSize()
+        .help(sortTitle(sort))
+    }
+
+    private func sortTitle(_ option: AppSort) -> String {
+        switch option {
+        case .name: return i18n.t(.sortName)
+        case .owns: return i18n.t(.sortOwns)
+        case .supports: return i18n.t(.sortSupports)
+        }
+    }
+
     private func chooseApp() {
         let panel = NSOpenPanel()
         panel.title = i18n.t(.chooseAppInspect)
@@ -88,6 +135,17 @@ struct AppsView: View {
               let bid = Bundle(url: url)?.bundleIdentifier else { return }
         state.addInspectedApp(bid)
         selectedID = bid
+    }
+
+    /// 在当前应用下直接添加后缀：加入文件后缀列表，并立即设为由该应用打开。
+    private func confirmAdd(for app: AppRelation) {
+        let raw = newExt
+        newExt = ""
+        showAddExt = false
+        let cleaned = AppState.sanitize(raw)
+        state.addExtension(raw)
+        guard !cleaned.isEmpty else { return }
+        state.setDefault(bundleID: app.bundleID, for: cleaned, role: .all)
     }
 
     // MARK: - 详情
@@ -131,13 +189,21 @@ struct AppsView: View {
                         .font(.caption)
                     }
                     Spacer()
-                    if let url = app.info.url {
+                    VStack(spacing: 8) {
                         Button {
-                            NSWorkspace.shared.activateFileViewerSelecting([url])
+                            showAddExt = true
                         } label: {
-                            Label(i18n.t(.showInFinder), systemImage: "folder")
+                            Label(i18n.t(.addExtButton), systemImage: "plus.circle")
                         }
                         .buttonStyle(.bordered)
+                        if let url = app.info.url {
+                            Button {
+                                NSWorkspace.shared.activateFileViewerSelecting([url])
+                            } label: {
+                                Label(i18n.t(.showInFinder), systemImage: "folder")
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
                 .padding(16)
@@ -147,6 +213,16 @@ struct AppsView: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 14).stroke(.separator.opacity(0.5))
+                }
+                .alert(i18n.t(.addExtAlertTitle), isPresented: $showAddExt) {
+                    TextField(i18n.t(.addPlaceholder), text: $newExt)
+                        .onSubmit { confirmAdd(for: app) }
+                    Button(i18n.t(.add)) { confirmAdd(for: app) }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(newExt.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button(i18n.t(.cancel), role: .cancel) { newExt = "" }
+                } message: {
+                    Text(i18n.t(.addExtAlertMsg, app.info.name))
                 }
 
                 if !app.owns.isEmpty {
