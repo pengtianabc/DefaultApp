@@ -28,6 +28,9 @@ Language / 语言: **English** | [简体中文](README.zh-CN.md)
   category single-select + extension multi-select.
 - **Search & filter** — keyword search by extension or app name; filter by
   All / Custom / System.
+- **Starter list** — first launch pre-populates common extensions across
+  categories (Documents / Code / Images / Video / Audio / Email / Archives), so
+  you immediately see real default apps; the list is yours to edit afterward.
 - **In-app language switch** — 简体中文 / English / Follow System, switchable
   live from the toolbar.
 - Your extension list is persisted between launches.

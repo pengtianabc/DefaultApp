@@ -16,6 +16,25 @@ final class AppState {
         var ext: String
     }
 
+    /// 首次启动预置的后缀列表：覆盖常用分类，让用户一打开就能看到
+    /// 一批真实存在的默认打开方式（也直观说明任意格式都支持）。
+    /// 仅在首次运行时写入一次；用户清空后不会再次出现。
+    static let starterExtensions: [String] = [
+        // 文档
+        "txt", "md", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+        "csv", "rtf", "pages", "epub",
+        // 代码
+        "json", "xml", "html", "css", "js", "ts", "py", "java", "c", "cpp",
+        "h", "swift", "go", "sh", "yaml", "sql", "log",
+        // 图片
+        "png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "heic", "psd",
+        // 视频 / 音频
+        "mp4", "mov", "mkv", "avi", "webm", "mp3", "wav", "flac", "m4a",
+        // 邮件 / 压缩
+        "eml", "msg", "ics", "vcf",
+        "zip", "rar", "7z", "tar", "gz", "dmg", "iso",
+    ]
+
     var entries: [Entry] = []
     var selectedID: Entry.ID?
     var statusMessage: String {
@@ -31,6 +50,7 @@ final class AppState {
 
     private let storeKey = "entries.v1"
     private let ownSetKey = "ownSet.v1"
+    private let didSeedKey = "didSeed.v1"
 
     private var i18n: I18n { I18n.shared }
 
@@ -148,11 +168,22 @@ final class AppState {
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storeKey),
-              let saved = try? JSONDecoder().decode([Entry].self, from: data) else { return }
-        entries = saved
-        selectedID = saved.first?.id
-        setStatus(i18n.t(.statusLoaded, saved.count), success: true)
+        if let data = UserDefaults.standard.data(forKey: storeKey),
+           let saved = try? JSONDecoder().decode([Entry].self, from: data) {
+            entries = saved
+            selectedID = saved.first?.id
+            setStatus(i18n.t(.statusLoaded, saved.count), success: true)
+            return
+        }
+        // 首次运行：写入一次预置列表（已有记录或已预置过则跳过）。
+        guard !UserDefaults.standard.bool(forKey: didSeedKey) else { return }
+        UserDefaults.standard.set(true, forKey: didSeedKey)
+        entries = Self.starterExtensions
+            .map { Entry(id: UUID(), ext: $0) }
+            .sorted { $0.ext.localizedCaseInsensitiveCompare($1.ext) == .orderedAscending }
+        selectedID = entries.first?.id
+        save()
+        setStatus(i18n.t(.statusLoaded, entries.count), success: true)
     }
 
     private func save() {
