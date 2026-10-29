@@ -62,7 +62,10 @@ final class I18n {
 
     func t(_ key: Key, _ args: CVarArg...) -> String {
         let template = table[key]?[resolved] ?? table[key]?[.en] ?? key.rawValue
-        return args.isEmpty ? template : String(format: template, arguments: args)
+        guard !args.isEmpty else { return template }
+        // %@ 期望对象参数：全部转为 String，避免 Int 等值类型被当作指针解引用导致崩溃。
+        let safeArgs = args.map { String(describing: $0) }
+        return String(format: template, arguments: safeArgs)
     }
 
     func roleTitle(_ role: HandlerRole) -> String {

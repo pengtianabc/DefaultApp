@@ -10,6 +10,14 @@ Language / 语言: **English** | [简体中文](README.zh-CN.md)
 ![Swift](https://img.shields.io/badge/swift-SwiftUI%20%2B%20LaunchServices-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<p align="center">
+  <img src="Screenshots/icon.png" width="128" height="128" alt="DefaultApp icon" />
+</p>
+<p align="center">
+  <img src="Screenshots/main.png" width="760" alt="DefaultApp main window" />
+</p>
+<p align="center"><i>Main window (Simplified Chinese UI; English & “Follow System” built in)</i></p>
+
 ## Features
 
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)

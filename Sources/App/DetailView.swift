@@ -168,7 +168,7 @@ struct DetailView: View {
         HStack(spacing: 12) {
             Label(i18n.t(.roleLabel), systemImage: "checkmark.shield")
                 .font(.headline)
-            Picker(i18n.t(.roleLabel), selection: $role) {
+            Picker("", selection: $role) {
                 ForEach(HandlerRole.allCases) { Text(i18n.roleTitle($0)).tag($0) }
             }
             .pickerStyle(.segmented)
@@ -283,6 +283,7 @@ struct DetailView: View {
 private struct CandidateRow: View {
     let app: AppInfo
     let isCurrent: Bool
+    @Environment(I18n.self) private var i18n
 
     var body: some View {
         HStack(spacing: 10) {
@@ -298,7 +299,7 @@ private struct CandidateRow: View {
                 HStack(spacing: 6) {
                     Text(app.name).font(.body)
                     if isCurrent {
-                        Text("CURRENT")
+                        Text(i18n.t(.currentBadge))
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.green)
                             .padding(.horizontal, 5)

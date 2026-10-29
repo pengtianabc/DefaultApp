@@ -9,6 +9,14 @@
 ![Swift](https://img.shields.io/badge/swift-SwiftUI%20%2B%20LaunchServices-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<p align="center">
+  <img src="Screenshots/icon.png" width="128" height="128" alt="DefaultApp 图标" />
+</p>
+<p align="center">
+  <img src="Screenshots/main.png" width="760" alt="DefaultApp 主界面" />
+</p>
+<p align="center"><i>主界面（简体中文；内置 English / 跟随系统切换）</i></p>
+
 ## 功能
 
 - **支持任意后缀**——不限于常见格式。直接输入任意后缀（如 `abc`），
