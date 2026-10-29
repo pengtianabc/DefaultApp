@@ -65,12 +65,30 @@ the app is ad-hoc signed.
   extensions via dynamic UTIs).
 - Current handler: `LSCopyDefaultRoleHandlerForContentType` (viewer → editor → any).
 - Candidate apps: `LSCopyAllRoleHandlersForContentType` (editor + viewer roles).
-- Set default: `LSSetDefaultRoleHandlerForContentType`.
+- Set default: `LSSetDefaultRoleHandlerForContentType`. With the **All** role it
+  stamps all three slots — **viewer / editor / all** — so Finder double-click,
+  the `open` command, and in-app requests all resolve to the same app. This also
+  overwrites apps that squatted on the "all roles" slot only (e.g. WorkBuddy
+  taking over `.md`).
 - User-vs-system detection: parses `LSHandlers` in
   `~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist`
   (plus changes made by this app itself).
 
-Changes take effect immediately — verified end-to-end by opening real files.
+Changes take effect immediately — verified end-to-end by opening real files
+with `open` after each change.
+
+## FAQ
+
+**Q: How long until a change takes effect?**
+Immediately. Once written to LaunchServices, Finder double-click and the
+`open` command use the new default right away — no restart needed.
+
+**Q: Why did `.md` files keep opening in WorkBuddy?**
+LaunchServices stores default handlers per role (viewer / editor / all). Some
+apps (e.g. WorkBuddy) squat on the "all roles" slot only, which made the system
+resolve differently than expected. Setting the default with the **All** role in
+this app overwrites all three slots at once; the detail pane also shows who
+holds the "all roles" slot if it ever disagrees.
 
 ## Test CLI
 

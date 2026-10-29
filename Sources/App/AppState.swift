@@ -160,9 +160,17 @@ final class AppState {
 
     // MARK: - 设置
 
+    /// 设置结果：verified 已写入且回验一致；unconfirmed 已写入但双击解析仍指向别处；
+    /// failed 写入被 LaunchServices 拒绝。
+    enum SetOutcome {
+        case verified(appName: String)
+        case unconfirmed(actualName: String)
+        case failed
+    }
+
     /// 设置默认打开方式，并用「双击同款解析」回验是否真实生效。
     @discardableResult
-    func setDefault(bundleID: String, for ext: String, role: HandlerRole) -> Bool {
+    func setDefault(bundleID: String, for ext: String, role: HandlerRole) -> SetOutcome {
         let appName = LaunchServices.appInfo(forBundleID: bundleID).name
         let ok = LaunchServices.setDefaultHandler(bundleID: bundleID, forExtension: ext, role: role)
         if ok {
@@ -173,16 +181,20 @@ final class AppState {
         // 回验：真实打开路径是否已指向目标应用
         let actual = LaunchServices.actualDefault(forExtension: ext)
         let aligned = actual?.bundleID == bundleID
+        let outcome: SetOutcome
         if ok && aligned {
+            outcome = .verified(appName: appName)
             setStatus(i18n.t(.statusSetOk, ".\(ext)", appName), success: true)
         } else if ok {
             let actualName = actual?.name ?? i18n.t(.unknownApp)
+            outcome = .unconfirmed(actualName: actualName)
             setStatus(i18n.t(.statusSetUnconfirmed, ".\(ext)", appName, actualName), success: false)
         } else {
+            outcome = .failed
             setStatus(i18n.t(.statusSetFail, appName, ".\(ext)"), success: false)
         }
         rebuildAppIndex()
-        return ok
+        return outcome
     }
 
     // MARK: - 应用 ↔ 后缀索引

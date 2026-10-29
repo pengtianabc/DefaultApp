@@ -45,6 +45,8 @@ final class I18n {
         case appCountOwns, appCountSupports
         case appOwnsTitle, appSupportsTitle, appDeclaredTypes, chooseAppInspect
         case mismatchWarning, statusSetUnconfirmed, unknownApp
+        case toastSetOk, toastSetUnconfirmed, toastSetFail
+        case mismatchRoleAll
     }
 
     static let shared = I18n()
@@ -137,7 +139,7 @@ final class I18n {
         .statusRemoved: [.zh: "已删除 %@。", .en: "Removed %@."],
         .statusReloaded: [.zh: "已从 LaunchServices 重新加载。", .en: "Reloaded from LaunchServices."],
         .statusLoaded: [.zh: "已加载 %@ 个文件后缀。", .en: "Loaded %@ extensions."],
-        .statusSetOk: [.zh: "已将 %@ 的默认打开方式设为「%@」。", .en: "Set %@ to open with “%@”."],
+        .statusSetOk: [.zh: "已将 %@ 的默认打开方式设为「%@」，立即生效。", .en: "Set %@ to open with “%@” — effective immediately."],
         .statusSetFail: [.zh: "设置失败：无法将 %@ 设为 %@ 的默认打开方式。", .en: "Failed to set %@ as the default for %@."],
         .extSuffixLabel: [.zh: "文件后缀", .en: "FILE EXTENSION"],
         .currentBadge: [.zh: "当前默认", .en: "CURRENT"],
@@ -154,7 +156,7 @@ final class I18n {
         .roleAll: [.zh: "全部", .en: "All"],
         .roleHintViewer: [.zh: "双击打开文件时使用", .en: "Used when you double-click the file"],
         .roleHintEditor: [.zh: "其他应用请求编辑器时使用", .en: "Used when apps ask for an editor"],
-        .roleHintAll: [.zh: "同时设置查看与编辑角色", .en: "Sets both viewer and editor roles"],
+        .roleHintAll: [.zh: "同时覆盖「查看 + 编辑 + 所有角色」，双击立即生效（推荐）", .en: "Stamps viewer + editor + all roles; double-click uses it immediately (recommended)"],
         .candidatesTitle: [.zh: "可打开 %@ 的应用", .en: "Apps that can open %@"],
         .candidatesEmpty: [.zh: "没有应用声明支持 %@，仍可在下方手动选择任意应用。本工具支持任意后缀，并非仅限常见格式。", .en: "No installed app declares support for %@. You can still pick any app below — any extension is supported, not just common ones."],
         .chooseApp: [.zh: "选择其他应用…", .en: "Choose Another App…"],
@@ -178,5 +180,9 @@ final class I18n {
         .mismatchWarning: [.zh: "双击实际打开与角色注册不一致：角色注册为 %@。重新「设为默认打开方式」可修复。", .en: "Double-click opens a different app than the registered role (role: %@). Use “Set as Default” to fix."],
         .statusSetUnconfirmed: [.zh: "%@ 已写入，但系统当前仍将双击解析为「%@」——可能有其他应用在抢占，请重试或重启目标应用后再试。", .en: "%@ was written, but double-click still resolves to “%@” — another app may be overriding it. Retry or relaunch the target app."],
         .unknownApp: [.zh: "未知应用", .en: "Unknown app"],
+        .toastSetOk: [.zh: "已设置并立即生效：.%@ 现在由「%@」打开", .en: "Done — .%@ now opens with “%@”, effective immediately"],
+        .toastSetUnconfirmed: [.zh: "已写入，但系统仍将 .%@ 解析为「%@」，可能被其他应用抢占", .en: "Written, but .%@ still resolves to “%@” — another app may be overriding it"],
+        .toastSetFail: [.zh: "设置失败：无法将「%@」设为 .%@ 的默认打开方式", .en: "Failed to set “%@” as the default for .%@"],
+        .mismatchRoleAll: [.zh: "「所有角色」槽位被 %@ 占用，与当前默认不一致，重新「设为默认打开方式」可一并覆盖。", .en: "The “all roles” slot is held by %@, which disagrees with the current default. Use “Set as Default” to overwrite it."],
     ]
 }

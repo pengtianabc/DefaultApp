@@ -9,14 +9,6 @@ enum HandlerRole: String, CaseIterable, Identifiable {
     case all
 
     var id: String { rawValue }
-
-    var lsMask: LSRolesMask {
-        switch self {
-        case .viewer: return .viewer
-        case .editor: return .editor
-        case .all: return [.viewer, .editor]
-        }
-    }
 }
 
 /// A macOS application identified by bundle ID, with resolved name/icon/url.
@@ -66,6 +58,21 @@ enum UserOverrides {
             }
         }
         return snapshot
+    }
+
+    /// 指定 UTI 的「所有角色」(LSHandlerRoleAll) 槽位持有者。
+    /// 某些应用（如 WorkBuddy）会只抢占这个槽位，导致它与其他角色注册不一致。
+    static func roleAllHandler(forUTI uti: String) -> String? {
+        guard let dict = NSDictionary(contentsOfFile: path) as? [String: Any],
+              let handlers = dict["LSHandlers"] as? [[String: Any]] else {
+            return nil
+        }
+        for handler in handlers where (handler["LSHandlerContentType"] as? String) == uti {
+            if let bid = handler["LSHandlerRoleAll"] as? String {
+                return bid
+            }
+        }
+        return nil
     }
 }
 
@@ -136,11 +143,32 @@ enum LaunchServices {
         return bids.map(appInfo(forBundleID:))
     }
 
+    /// 设置默认打开方式。
+    /// - `.all`：依次写入 查看 / 编辑 / 所有角色 三个槽位，确保任何解析路径
+    ///   （访达双击、`open` 命令、其他应用请求）都得到同一结果，且能覆盖
+    ///   只抢占了「所有角色」槽位的应用（如 WorkBuddy）。
     @discardableResult
     static func setDefaultHandler(bundleID: String, forExtension ext: String, role: HandlerRole) -> Bool {
         guard let uti = uti(forExtension: ext) else { return false }
-        let status = LSSetDefaultRoleHandlerForContentType(uti as CFString, role.lsMask, bundleID as CFString)
-        return status == noErr
+        let masks: [LSRolesMask]
+        switch role {
+        case .viewer: masks = [[.viewer]]
+        case .editor: masks = [[.editor]]
+        case .all: masks = [[.viewer], [.editor], [.all]]
+        }
+        var ok = true
+        for mask in masks {
+            let status = LSSetDefaultRoleHandlerForContentType(uti as CFString, mask, bundleID as CFString)
+            if status != noErr { ok = false }
+        }
+        return ok
+    }
+
+    /// 「所有角色」槽位的当前持有者（来自 LaunchServices 用户覆盖表）。
+    static func roleAllClaimant(forExtension ext: String) -> AppInfo? {
+        guard let uti = uti(forExtension: ext),
+              let bid = UserOverrides.roleAllHandler(forUTI: uti) else { return nil }
+        return appInfo(forBundleID: bid)
     }
 
     static func appInfo(forBundleID bid: String) -> AppInfo {

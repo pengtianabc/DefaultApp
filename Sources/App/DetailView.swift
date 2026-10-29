@@ -9,9 +9,11 @@ struct DetailView: View {
     @State private var role: HandlerRole = .all
     @State private var current: AppInfo?
     @State private var roleBased: AppInfo?
+    @State private var roleAll: AppInfo?
     @State private var candidates: [AppInfo] = []
     @State private var pickedID: String?
     @State private var errorMessage: String?
+    @State private var toast: Toast?
 
     private var taskID: String {
         "\(entry.id.uuidString)-\(state.refreshToken.uuidString)"
@@ -39,6 +41,26 @@ struct DetailView: View {
             Button(i18n.t(.ok)) {}
         } message: {
             Text(errorMessage ?? "")
+        }
+        .overlay(alignment: .bottom) { toastOverlay }
+    }
+
+    @ViewBuilder
+    private var toastOverlay: some View {
+        if let toast {
+            ToastView(toast: toast)
+                .padding(.bottom, 14)
+        }
+    }
+
+    private func showToast(_ newToast: Toast) {
+        withAnimation(.snappy) { toast = newToast }
+        let id = newToast.id
+        Task {
+            try? await Task.sleep(for: .seconds(4))
+            if toast?.id == id {
+                withAnimation(.snappy) { toast = nil }
+            }
         }
     }
 
@@ -78,6 +100,22 @@ struct DetailView: View {
 
             if let roleBased, let current, roleBased.bundleID != current.bundleID {
                 mismatchBanner(roleApp: roleBased)
+            }
+
+            // 「所有角色」槽位被第三方应用（如 WorkBuddy）抢占时的提示
+            if let roleAll, let current,
+               roleAll.bundleID != current.bundleID,
+               roleAll.bundleID != roleBased?.bundleID {
+                Label {
+                    Text(i18n.t(.mismatchRoleAll, roleAll.name))
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.octagon.fill")
+                        .foregroundStyle(.red)
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 10).fill(.red.opacity(0.08)))
             }
         }
     }
@@ -265,9 +303,10 @@ struct DetailView: View {
 
     @MainActor
     private func reload() async {
-        // current 使用与双击一致的解析；roleBased 记录角色注册值用于一致性对比
+        // current 使用与双击一致的解析；roleBased/roleAll 记录角色注册值用于一致性对比
         current = state.currentDefault(for: entry.ext)
         roleBased = LaunchServices.defaultHandler(forExtension: entry.ext)
+        roleAll = LaunchServices.roleAllClaimant(forExtension: entry.ext)
         candidates = state.candidates(for: entry.ext)
         pickedID = nil
     }
@@ -294,9 +333,16 @@ struct DetailView: View {
 
     private func apply() {
         guard let bid = pickedID else { return }
-        guard state.setDefault(bundleID: bid, for: entry.ext, role: role) else {
+        let outcome = state.setDefault(bundleID: bid, for: entry.ext, role: role)
+        switch outcome {
+        case .verified(let appName):
+            showToast(Toast(kind: .success, message: i18n.t(.toastSetOk, entry.ext, appName)))
+        case .unconfirmed(let actualName):
+            showToast(Toast(kind: .warning, message: i18n.t(.toastSetUnconfirmed, entry.ext, actualName)))
+        case .failed:
             errorMessage = i18n.t(.alertMsgGeneric)
-            return
+            let appName = LaunchServices.appInfo(forBundleID: bid).name
+            showToast(Toast(kind: .failure, message: i18n.t(.toastSetFail, appName, entry.ext)))
         }
         Task { await reload() }
     }
@@ -336,5 +382,58 @@ private struct CandidateRow: View {
             Spacer()
         }
         .padding(.vertical, 2)
+    }
+}
+
+// MARK: - 操作结果浮动提示
+
+/// 操作结果提示：成功（绿）/ 被抢占警告（橙）/ 失败（红），4 秒自动消失。
+private struct Toast: Identifiable {
+    enum Kind { case success, warning, failure }
+    let id = UUID()
+    let kind: Kind
+    let message: String
+}
+
+private struct ToastView: View {
+    let toast: Toast
+
+    private var iconName: String {
+        switch toast.kind {
+        case .success: return "checkmark.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .failure: return "xmark.circle.fill"
+        }
+    }
+
+    private var iconColor: Color {
+        switch toast.kind {
+        case .success: return .green
+        case .warning: return .orange
+        case .failure: return .red
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: iconName)
+                .foregroundStyle(iconColor)
+            Text(toast.message)
+                .font(.callout.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .background(
+            .regularMaterial,
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(iconColor.opacity(0.35), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 5)
+        .frame(maxWidth: 460)
+        .padding(.horizontal, 24)
     }
 }

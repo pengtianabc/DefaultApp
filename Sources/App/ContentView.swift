@@ -272,7 +272,6 @@ struct ContentView: View {
                 }
                 Spacer()
             }
-            statusBar
         }
     }
 

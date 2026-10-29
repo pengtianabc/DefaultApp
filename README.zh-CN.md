@@ -55,12 +55,27 @@ open DefaultApp.app
 - 后缀 → UTI：使用 `UTType(tag: .filenameExtension)`（未知后缀通过动态 UTI 同样支持）。
 - 查询当前默认：`LSCopyDefaultRoleHandlerForContentType`（依次回退查看/编辑/任意角色）。
 - 枚举候选应用：`LSCopyAllRoleHandlersForContentType`（编辑 + 查看角色去重）。
-- 修改默认打开方式：`LSSetDefaultRoleHandlerForContentType`。
+- 修改默认打开方式：`LSSetDefaultRoleHandlerForContentType`。选择「全部」角色时
+  会依次写入 **查看 / 编辑 / 所有角色** 三个槽位，确保访达双击、`open` 命令、
+  其他应用请求等所有解析路径结果一致，并能覆盖只抢占了「所有角色」槽位的应用
+  （如 WorkBuddy 对 `.md` 的抢占）。
 - 用户/系统来源判定：解析
   `~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist`
   中的 `LSHandlers` 记录，并结合本工具自身设置过的记录。
 
-修改立即生效——已通过真实打开文件做端到端验证。
+修改立即生效——已通过真实打开文件做端到端验证（设置后用 `open` 实测目标应用）。
+
+## 常见问题
+
+**Q：设置后多久生效？**
+立即生效。写入 LaunchServices 后，访达双击、`open` 命令即刻使用新的默认应用，
+无需重启系统或访达。若目标应用本身正在运行，新开文件也会按新默认路由。
+
+**Q：为什么之前双击 `.md` 总是 WorkBuddy 打开？**
+LaunchServices 的默认打开方式按「角色」分槽位存储（查看 / 编辑 / 所有角色）。
+某些应用（如 WorkBuddy）会只抢占「所有角色」槽位，导致系统解析与预期不一致。
+本工具选择「全部」角色设置时会一次性覆盖三个槽位，彻底解决这个问题；
+详情页也会标出「所有角色」槽位被谁占用。
 
 ## 测试 CLI
 
