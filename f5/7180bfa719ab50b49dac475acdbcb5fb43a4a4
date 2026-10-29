@@ -1,0 +1,16 @@
+Sources/App/AppsView.swift
+  h_53aea25a6c6376 13-21,25,28-45,72,107-126,140-150,192,194,196,199-206,217-226
+Sources/App/I18n.swift
+  h_53aea25a6c6376 50-51,189-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f57180bfa719ab50b49dac475acdbcb5fb43a4a4",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
