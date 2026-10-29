@@ -49,6 +49,7 @@ final class I18n {
         case mismatchRoleAll
         case sortName, sortOwns, sortSupports
         case addExtButton, addExtAlertTitle, addExtAlertMsg, cancel
+        case ghButton, ghTip, ghTipNew, ghTipUnknown
     }
 
     static let shared = I18n()
@@ -193,5 +194,9 @@ final class I18n {
         .addExtAlertTitle: [.zh: "添加后缀", .en: "Add Extension"],
         .addExtAlertMsg: [.zh: "输入要交给「%@」打开的后缀（不含点）。后缀会加入文件后缀列表，并立即设为由该应用打开。", .en: "Enter the extension (without the dot) that “%@” should open. It is added to the extensions list and set to open with this app immediately."],
         .cancel: [.zh: "取消", .en: "Cancel"],
+        .ghButton: [.zh: "GitHub", .en: "GitHub"],
+        .ghTip: [.zh: "GitHub 仓库 · 最新版本 %@，点击访问", .en: "GitHub repo · latest release %@ — click to visit"],
+        .ghTipNew: [.zh: "发现新版本 %@（当前 v%@），点击查看 Release", .en: "New release %@ available (you're on v%@) — click to view"],
+        .ghTipUnknown: [.zh: "GitHub 仓库，点击访问", .en: "GitHub repo — click to visit"],
     ]
 }

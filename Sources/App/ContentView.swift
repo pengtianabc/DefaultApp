@@ -45,7 +45,11 @@ struct ContentView: View {
         }
         .frame(minWidth: 940, minHeight: 620)
         .tint(.indigo)
+        .task { GitHubRelease.shared.check() }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                githubButton
+            }
             ToolbarItem(placement: .primaryAction) {
                 Picker(selection: $i18n.lang) {
                     Label(i18n.t(.followSystem), systemImage: "macbook").tag(I18n.Lang.system)
@@ -59,6 +63,35 @@ struct ContentView: View {
                 .frame(width: 42)
             }
         }
+    }
+
+    // MARK: - GitHub 版本入口
+
+    private var githubButton: some View {
+        Button {
+            GitHubRelease.shared.visit()
+        } label: {
+            if let tag = GitHubRelease.shared.latestTag {
+                Label("v\(tag)", systemImage: GitHubRelease.shared.isNewer ? "arrow.up.circle.fill" : "tag")
+                    .foregroundStyle(GitHubRelease.shared.isNewer ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+                    .font(.callout.weight(.medium))
+            } else {
+                Label(i18n.t(.ghButton), systemImage: "link")
+            }
+        }
+        .buttonStyle(.plain)
+        .help(githubTooltip)
+    }
+
+    private var githubTooltip: String {
+        if let tag = GitHubRelease.shared.latestTag {
+            if GitHubRelease.shared.isNewer {
+                let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+                return i18n.t(.ghTipNew, tag, current)
+            }
+            return i18n.t(.ghTip, tag)
+        }
+        return i18n.t(.ghTipUnknown)
     }
 
     private var extensionsSplit: some View {
