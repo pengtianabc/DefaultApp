@@ -51,6 +51,7 @@ final class I18n {
         case addExtButton, addExtAlertTitle, addExtAlertMsg, cancel
         case ghButton, ghTip, ghTipNew, ghTipUnknown
         case tabSchemes, schemesIntro, schemeNoHandler, schemeCandidates, schemeUnset, schemeRestoreDone, schemeSetDone
+        case setDefaultShort, previewTip, previewOpened, previewFailed
     }
 
     static let shared = I18n()
@@ -206,5 +207,9 @@ final class I18n {
         .schemeUnset: [.zh: "恢复系统默认", .en: "Restore System Default"],
         .schemeRestoreDone: [.zh: "已将 %@ 交还给系统默认", .en: "Restored %@ to the system default"],
         .schemeSetDone: [.zh: "%@ 现在由「%@」处理，立即生效", .en: "%@: now handled by %@, effective immediately"],
+        .setDefaultShort: [.zh: "设为默认", .en: "Set Default"],
+        .previewTip: [.zh: "用这个应用临时打开试试（不更改默认设置）", .en: "Try opening with this app (your default is unchanged)"],
+        .previewOpened: [.zh: "已用「%@」临时打开测试文件，默认设置未更改", .en: "Opened a test file with %@ — defaults unchanged"],
+        .previewFailed: [.zh: "临时打开失败：%@", .en: "Failed to open: %@"],
     ]
 }

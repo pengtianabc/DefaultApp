@@ -11,7 +11,6 @@ struct DetailView: View {
     @State private var roleBased: AppInfo?
     @State private var roleAll: AppInfo?
     @State private var candidates: [AppInfo] = []
-    @State private var pickedID: String?
     @State private var errorMessage: String?
     @State private var toast: Toast?
 
@@ -25,7 +24,6 @@ struct DetailView: View {
             rolePicker
             candidatesSection
             Spacer(minLength: 0)
-            actionBar
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -262,6 +260,11 @@ struct DetailView: View {
                         .background(Capsule().fill(.secondary.opacity(0.15)))
                 }
                 Spacer()
+                Button { chooseApp() } label: {
+                    Label(i18n.t(.chooseApp), systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
 
             if candidates.isEmpty {
@@ -273,10 +276,14 @@ struct DetailView: View {
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.4)))
             } else {
-                List(selection: $pickedID) {
+                List {
                     ForEach(candidates) { app in
-                        CandidateRow(app: app, isCurrent: app.bundleID == current?.bundleID)
-                            .tag(app.id)
+                        CandidateActionRow(
+                            app: app,
+                            isCurrent: app.bundleID == current?.bundleID,
+                            onPreview: { preview(app) },
+                            onSetDefault: { apply(app) }
+                        )
                     }
                 }
                 .listStyle(.plain)
@@ -287,17 +294,25 @@ struct DetailView: View {
         }
     }
 
-    // MARK: - 操作
+    // MARK: - 行内操作
 
-    private var actionBar: some View {
-        HStack(spacing: 12) {
-            Button(i18n.t(.chooseApp)) { chooseApp() }
-                .buttonStyle(.bordered)
-            Spacer()
-            Button(i18n.t(.setDefault)) { apply() }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(pickedID == nil)
+    /// 临时打开：在临时目录生成测试文件并用目标应用打开，完全不修改默认设置。
+    private func preview(_ app: AppInfo) {
+        guard let appURL = app.url else { return }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("defaultapp-try-\(entry.ext)-\(UUID().uuidString.prefix(4)).\(entry.ext)")
+        let content = "DefaultApp try-open test for .\(entry.ext) with \(app.name)\n"
+        try? content.write(to: tmp, atomically: true, encoding: .utf8)
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.open([tmp], withApplicationAt: appURL, configuration: configuration) { _, error in
+            Task { @MainActor in
+                if let error {
+                    self.showToast(Toast(kind: .failure, message: self.i18n.t(.previewFailed, error.localizedDescription)))
+                } else {
+                    self.showToast(Toast(kind: .success, message: self.i18n.t(.previewOpened, app.name)))
+                }
+            }
         }
     }
 
@@ -308,7 +323,6 @@ struct DetailView: View {
         roleBased = LaunchServices.defaultHandler(forExtension: entry.ext)
         roleAll = LaunchServices.roleAllClaimant(forExtension: entry.ext)
         candidates = state.candidates(for: entry.ext)
-        pickedID = nil
         // 截图模式：展示成功提示条，演示操作反馈效果
         if Snapshotter.isActive {
             try? await Task.sleep(for: .milliseconds(300))
@@ -335,11 +349,10 @@ struct DetailView: View {
             candidates.append(info)
             candidates.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         }
-        pickedID = bid
     }
 
-    private func apply() {
-        guard let bid = pickedID else { return }
+    private func apply(_ app: AppInfo) {
+        let bid = app.bundleID
         let outcome = state.setDefault(bundleID: bid, for: entry.ext, role: role)
         switch outcome {
         case .verified(let appName):
@@ -442,5 +455,68 @@ private struct ToastView: View {
         .shadow(color: .black.opacity(0.18), radius: 12, y: 5)
         .frame(maxWidth: 460)
         .padding(.horizontal, 24)
+    }
+}
+
+// MARK: - 候选行（含悬停操作）
+
+/// 详情页候选行：悬停时浮现「临时打开」与「设为默认」操作。
+/// 当前默认行只展示徽标，不提供操作。
+private struct CandidateActionRow: View {
+    let app: AppInfo
+    let isCurrent: Bool
+    let onPreview: () -> Void
+    let onSetDefault: () -> Void
+    @Environment(I18n.self) private var i18n
+    @State private var hovered = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if let icon = app.icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 26, height: 26)
+                    .padding(4)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.5)))
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 6) {
+                    Text(app.name).font(.body)
+                    if isCurrent {
+                        Text(i18n.t(.currentBadge))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(.green.opacity(0.22)))
+                    }
+                }
+                Text(app.bundleID)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if !isCurrent {
+                HStack(spacing: 8) {
+                    Button(action: onPreview) {
+                        Image(systemName: "play.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .help(i18n.t(.previewTip))
+                    Button(action: onSetDefault) {
+                        Label(i18n.t(.setDefaultShort), systemImage: "checkmark.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .opacity(hovered ? 1 : 0)
+                .animation(.snappy(duration: 0.15), value: hovered)
+            }
+        }
+        .padding(.vertical, 3)
+        .contentShape(Rectangle())
+        .onHover { hovered = $0 }
     }
 }
