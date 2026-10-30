@@ -1,0 +1,16 @@
+.github/workflows/release.yml
+  h_53aea25a6c6376 20-22
+build.sh
+  h_53aea25a6c6376 91-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1eedb9a8459f9bcd73eae9640dcbd6a6c5b02ff0",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
