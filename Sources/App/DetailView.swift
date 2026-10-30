@@ -470,6 +470,7 @@ struct ActionCandidateRow: View {
     var onPreview: (() -> Void)?
     let onSetDefault: () -> Void
     @Environment(I18n.self) private var i18n
+    @State private var hovered = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -518,6 +519,13 @@ struct ActionCandidateRow: View {
             }
         }
         .padding(.vertical, 8)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(hovered ? AnyShapeStyle(.tint.opacity(0.08)) : AnyShapeStyle(.clear))
+        )
         .contentShape(Rectangle())
+        .onHover { hovered = $0 }
+        .animation(.snappy(duration: 0.15), value: hovered)
     }
 }

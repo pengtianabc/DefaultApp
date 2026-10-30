@@ -24,15 +24,16 @@ struct ContentView: View {
         @Bindable var state = state
         @Bindable var i18n = i18n
         VStack(spacing: 0) {
-            Picker("", selection: $mode) {
-                Text(i18n.t(.tabExtensions)).tag(ViewMode.extensions)
-                Text(i18n.t(.tabApps)).tag(ViewMode.apps)
-                Text(i18n.t(.tabSchemes)).tag(ViewMode.schemes)
+            // 自定义胶囊分段控件：激活高亮 + 悬停反馈（原生 segmented 悬停效果太弱）
+            HStack(spacing: 4) {
+                ModeTabButton(title: i18n.t(.tabExtensions), isActive: mode == .extensions) { mode = .extensions }
+                ModeTabButton(title: i18n.t(.tabApps), isActive: mode == .apps) { mode = .apps }
+                ModeTabButton(title: i18n.t(.tabSchemes), isActive: mode == .schemes) { mode = .schemes }
             }
-            .pickerStyle(.segmented)
-            .frame(width: 320)
+            .padding(4)
+            .frame(width: 340)
+            .background(Capsule().fill(.quaternary.opacity(0.3)))
             .padding(.vertical, 8)
-            .labelsHidden()
 
             switch mode {
             case .extensions:
@@ -544,5 +545,34 @@ private struct ExtBadge: View {
                 ),
                 in: RoundedRectangle(cornerRadius: 8)
             )
+    }
+}
+
+// MARK: - 顶部模式切换（自定义胶囊分段，带悬停反馈）
+
+private struct ModeTabButton: View {
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.callout.weight(isActive ? .semibold : .regular))
+                .foregroundStyle(isActive ? .white : .primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule().fill(
+                        isActive ? AnyShapeStyle(.tint)
+                                 : (hovered ? AnyShapeStyle(.tint.opacity(0.12)) : AnyShapeStyle(.clear))
+                    )
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .animation(.snappy(duration: 0.15), value: hovered)
+        .animation(.snappy(duration: 0.2), value: isActive)
     }
 }
