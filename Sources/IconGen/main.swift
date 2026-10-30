@@ -35,7 +35,18 @@ func tintedSymbol(_ name: String, pointSize: CGFloat) -> NSImage? {
 
 func makeIcon(pixels: Int, path: String) {
     let s = CGFloat(pixels)
+    // 边距：与系统图标观感一致（图形占画布约 85%，四周留白），
+    // 否则满幅绘制在访达/程序坞里会显得比 neighboring 图标大一圈。
+    let marginRatio: CGFloat = 0.075
+    let margin = s * marginRatio
+    let scale = 1 - marginRatio * 2
     let image = NSImage(size: NSSize(width: s, height: s), flipped: false) { _ in
+        NSColor.clear.set()
+        NSRect(x: 0, y: 0, width: s, height: s).fill()
+        NSGraphicsContext.current?.saveGraphicsState()
+        NSGraphicsContext.current?.cgContext.translateBy(x: margin, y: margin)
+        NSGraphicsContext.current?.cgContext.scaleBy(x: scale, y: scale)
+
         let rect = NSRect(x: 0, y: 0, width: s, height: s)
 
         // 渐变圆角底
@@ -107,6 +118,7 @@ func makeIcon(pixels: Int, path: String) {
             )
             check.draw(in: target)
         }
+        NSGraphicsContext.current?.restoreGraphicsState()
         return true
     }
 
