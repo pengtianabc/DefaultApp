@@ -239,4 +239,33 @@ enum LaunchServices {
         let icon = url.map { NSWorkspace.shared.icon(forFile: $0.path) }
         return AppInfo(bundleID: bid, url: url, name: name, icon: icon)
     }
+
+    /// 把用户输入解析为 Bundle ID：先按 Bundle ID 直接查；否则在
+    /// /Applications、/Applications/Utilities、~/Applications 下按应用名
+    /// （显示名 / CFBundleName，不区分大小写）匹配 .app。
+    static func resolveBundleID(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty, NSWorkspace.shared.urlForApplication(withBundleIdentifier: trimmed) != nil {
+            return trimmed
+        }
+        let roots = ["/Applications", "/Applications/Utilities",
+                     "/System/Applications", "/System/Applications/Utilities",
+                     NSHomeDirectory() + "/Applications"]
+        var matches: [String] = []
+        for root in roots {
+            guard let entries = try? FileManager.default.contentsOfDirectory(atPath: root) else { continue }
+            for entry in entries where entry.hasSuffix(".app") {
+                let path = root + "/" + entry
+                guard let bundle = Bundle(path: path) else { continue }
+                let display = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+                    ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String)
+                    ?? entry
+                if display.caseInsensitiveCompare(trimmed) == .orderedSame,
+                   let bid = bundle.bundleIdentifier, !matches.contains(bid) {
+                    matches.append(bid)
+                }
+            }
+        }
+        return matches.count == 1 ? matches.first : nil
+    }
 }

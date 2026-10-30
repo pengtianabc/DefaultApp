@@ -43,7 +43,9 @@ let helpText = """
   \(Term.cyan("get")) <ext>                 Show what opens an extension: double-click resolution,
                             role registration and the all-roles slot, side by side
   \(Term.cyan("list")) <ext>                List every app that declared it can open an extension
-  \(Term.cyan("set")) <ext> <bundle>        Make an app the default opener (default role: all)
+  \(Term.cyan("set")) <ext> <app>           Make an app the default opener — <app>
+                            is an app name (e.g. "Cursor") or a bundle id
+                            (default role: all)
            [--role viewer|editor|all]
   \(Term.cyan("unset")) <ext>               Remove your override; hand the choice back to macOS
   \(Term.cyan("check"))                     Scan all common extensions for registration mismatches
@@ -56,7 +58,7 @@ let helpText = """
 
 \(Term.bold("EXAMPLES"))
   defaultapp get md
-  defaultapp set md com.todesktop.230313mzl4w4u92
+  defaultapp set md Cursor
   defaultapp unset md
   defaultapp check --json
 
@@ -198,34 +200,39 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     }
     guard !apps.isEmpty else {
         print(Term.dim("No installed app declares it can open .\(cleaned)."))
-        print(Term.dim("You can still assign one: defaultapp set \(cleaned) <bundle-id>"))
+        print(Term.dim("You can still assign one: defaultapp set \(cleaned) \"App Name\" — name or bundle id"))
         return 0
     }
     print(Term.bold(".\(cleaned)") + Term.dim("  — \(apps.count) app(s) can open it") + (current == nil ? "" : Term.dim(", * = current default")))
     print()
-    let idWidth = min(apps.map { $0.bundleID.count }.max()!, 52) + 3
+    // 名字为主列，Bundle ID 为灰色次要列
+    let nameWidth = min(apps.map { $0.name.count }.max()!, 30) + 3
     for (index, app) in apps.enumerated() {
         let isDefault = app.bundleID == current
         let marker = isDefault ? Term.green("*") : Term.dim(" ")
         // 先对纯文本补白再上色：ANSI 转义序列不算显示宽度
-        let id = isDefault ? Term.green(pad(app.bundleID, idWidth)) : pad(app.bundleID, idWidth)
-        let name = isDefault ? Term.bold(app.name) : app.name
-        print(" \(marker) \(pad("\(index + 1).", 4))\(id)\(name)")
+        let name = isDefault ? Term.bold(pad(app.name, nameWidth)) : pad(app.name, nameWidth)
+        let id = isDefault ? Term.green(app.bundleID) : Term.dim(app.bundleID)
+        print(" \(marker) \(pad("\(index + 1).", 4))\(name)\(id)")
     }
     return 0
 }
 
-@MainActor func commandSet(_ ext: String, bundleID: String, role: HandlerRole) -> Int32 {
+@MainActor func commandSet(_ ext: String, appRef: String, role: HandlerRole) -> Int32 {
     let cleaned = ext.lowercased()
     guard LaunchServices.uti(forExtension: cleaned) != nil else {
         fail("'\(ext)' is not a valid extension")
     }
+    // 接受应用名或 Bundle ID；名字自动解析
+    guard let bundleID = LaunchServices.resolveBundleID(appRef) else {
+        fail("'\(appRef)' matches no installed app — pass an app name (defaultapp list \(cleaned)) or a bundle id")
+    }
+    let target = LaunchServices.appInfo(forBundleID: bundleID)
     let before = LaunchServices.actualDefault(forExtension: cleaned)
     guard LaunchServices.setDefaultHandler(bundleID: bundleID, forExtension: cleaned, role: role) else {
         fail("LaunchServices rejected the change for .\(cleaned)")
     }
     let after = LaunchServices.actualDefault(forExtension: cleaned)
-    let target = LaunchServices.appInfo(forBundleID: bundleID)
     let roleText = role == .all ? "all roles" : "\(role.rawValue) role"
 
     print(Term.bold(".\(cleaned)") + Term.dim("  (\(roleText))"))
@@ -296,7 +303,7 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
               + Term.dim("  ≠ double-click ") + "\(item.actual?.name ?? "—")")
     }
     print()
-    print(Term.dim("Re-set them to stamp all three roles: defaultapp set <ext> <bundle-id>"))
+    print(Term.dim("Re-set them to stamp all three roles: defaultapp set <ext> \"App Name\""))
     return 1
 }
 
@@ -319,8 +326,8 @@ func run() -> Int32 {
         guard let ext = args.positional.first else { fail("usage: defaultapp list <ext>") }
         return commandList(ext, json: args.json)
     case "set":
-        guard args.positional.count >= 2 else { fail("usage: defaultapp set <ext> <bundle-id> [--role viewer|editor|all]") }
-        return commandSet(args.positional[0], bundleID: args.positional[1], role: args.role)
+        guard args.positional.count >= 2 else { fail("usage: defaultapp set <ext> <app> [--role viewer|editor|all]  (app = name or bundle id)") }
+        return commandSet(args.positional[0], appRef: args.positional[1], role: args.role)
     case "unset":
         guard let ext = args.positional.first else { fail("usage: defaultapp unset <ext>") }
         return commandUnset(ext)

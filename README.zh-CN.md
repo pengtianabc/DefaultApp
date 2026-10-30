@@ -103,9 +103,11 @@ install -m 755 .build/defaultapp /usr/local/bin/defaultapp
 ```bash
 defaultapp get md                      # 查看 .md 的默认打开应用（真实双击解析 + 角色注册 +
                                        # 所有角色槽位三列对照；不一致时给出 ⚠ MISMATCH 与修复命令）
-defaultapp list png                    # 列出所有声明可打开 .png 的应用（* 标记当前默认）
-defaultapp set txt com.sublimetext.4   # 设置默认打开方式（默认写入全部三个角色槽位，立即生效）
-defaultapp set txt com.sublimetext.4 viewer   # 也可只设查看 / 编辑 / all 角色
+defaultapp list png                    # 列出所有声明可打开 .png 的应用（名字为主列，
+                                       # 灰色列为 Bundle ID；* 标记当前默认）
+defaultapp set txt "Sublime Text"      # 设置默认打开方式：直接用应用名（自动解析 Bundle ID），
+                                       # 也可传 Bundle ID；默认写入全部三个角色槽位，立即生效
+defaultapp set txt "Sublime Text" viewer   # 也可只设查看 / 编辑 / all 角色
 defaultapp unset txt                   # 移除你的设置，交还给系统默认（含注册表级清除）
 defaultapp check                       # 全量扫描常用后缀，列出「角色注册 ≠ 双击实际打开」的项
 defaultapp get md --json               # get / list / check 均支持 --json，便于脚本消费
