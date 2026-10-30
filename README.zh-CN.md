@@ -81,6 +81,12 @@ open DefaultApp.app
 立即生效。写入 LaunchServices 后，访达双击、`open` 命令即刻使用新的默认应用，
 无需重启系统或访达。若目标应用本身正在运行，新开文件也会按新默认路由。
 
+**Q：设置时提示「LaunchServices 拒绝了此次更改」？**
+说明目标应用没有在它的 Info.plist 里声明该文件类型（Edge 就没有声明
+`public.html`），旧的 LSSet API 会因此拒绝。本工具会自动回退到
+macOS 12+ 的 NSWorkspace 接口（系统设置同款），最终直写查看/编辑/所有
+角色三个槽位，实测对未声明类型的应用同样生效（html → Edge 已验证）。
+
 **Q：为什么之前双击 `.md` 总是 WorkBuddy 打开？**
 LaunchServices 的默认打开方式按「角色」分槽位存储（查看 / 编辑 / 所有角色）。
 某些应用（如 WorkBuddy）会只抢占「所有角色」槽位，导致系统解析与预期不一致。

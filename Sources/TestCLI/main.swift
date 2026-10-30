@@ -243,7 +243,12 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     guard LaunchServices.setDefaultHandler(bundleID: bundleID, forExtension: cleaned, role: role) else {
         fail("LaunchServices rejected the change for .\(cleaned)")
     }
-    let after = LaunchServices.actualDefault(forExtension: cleaned)
+    // 回退路径会重启 lsd，本进程的 LS 客户端缓存可能仍是旧值：以覆盖表为准复核。
+    var after = LaunchServices.actualDefault(forExtension: cleaned)
+    if after?.bundleID != bundleID,
+       LaunchServices.overrideSlotHolder(forExtension: cleaned) == bundleID {
+        after = target
+    }
     let roleText = role == .all ? "all roles" : "\(role.rawValue) role"
 
     print(Term.bold(".\(cleaned)") + Term.dim("  (\(roleText))"))

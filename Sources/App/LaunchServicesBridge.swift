@@ -147,6 +147,9 @@ enum LaunchServices {
     /// - `.all`：依次写入 查看 / 编辑 / 所有角色 三个槽位，确保任何解析路径
     ///   （访达双击、`open` 命令、其他应用请求）都得到同一结果，且能覆盖
     ///   只抢占了「所有角色」槽位的应用（如 WorkBuddy）。
+    /// - 目标应用未在 Info.plist 声明该内容类型时（如 Edge 没有声明
+    ///   `public.html`），LSSet API 会拒绝；此时回退到 macOS 12+ 的
+    ///   NSWorkspace API（系统设置同款接口），它不做声明校验。
     @discardableResult
     static func setDefaultHandler(bundleID: String, forExtension ext: String, role: HandlerRole) -> Bool {
         guard let uti = uti(forExtension: ext) else { return false }
@@ -161,7 +164,19 @@ enum LaunchServices {
             let status = LSSetDefaultRoleHandlerForContentType(uti as CFString, mask, bundleID as CFString)
             if status != noErr { ok = false }
         }
-        return ok
+        if ok { return true }
+        guard role == .all else { return false }
+        // 回退 1：NSWorkspace.setDefaultApplication（System Settings 同款接口）。
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID),
+           let type = UTType(uti) {
+            let semaphore = DispatchSemaphore(value: 0)
+            NSWorkspace.shared.setDefaultApplication(at: appURL, toOpen: type) { _ in semaphore.signal() }
+            semaphore.wait()
+        }
+        // 回退 2：直接写入查看/编辑/所有角色三槽位覆盖记录。
+        // NSWorkspace 对未声明该类型的应用只写 RoleAll 槽位，双击解析仍会被
+        // 角色注册抢走（如 html 仍是 Safari），必须补齐 viewer/editor。
+        return stampOverride(ext: ext, bundleID: bundleID)
     }
 
     /// 移除用户在 LaunchServices 中的覆盖记录，把默认打开方式交还给系统。
@@ -172,13 +187,7 @@ enum LaunchServices {
     @discardableResult
     static func removeOverride(forExtension ext: String) -> Bool {
         guard let uti = uti(forExtension: ext) else { return false }
-        let path = NSHomeDirectory()
-            + "/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist"
-        guard let raw = FileManager.default.contents(atPath: path),
-              var dict = (try? PropertyListSerialization.propertyList(from: raw, format: nil)) as? [String: Any],
-              var handlers = dict["LSHandlers"] as? [[String: Any]] else {
-            return false
-        }
+        guard var (dict, handlers) = readHandlers() else { return false }
         let before = handlers.count
         let lowered = ext.lowercased()
         handlers.removeAll { handler in
@@ -194,21 +203,82 @@ enum LaunchServices {
         }
         guard handlers.count < before else { return true }  // 本无覆盖，视为成功
         dict["LSHandlers"] = handlers
+        return writeHandlers(dict)
+    }
+
+    /// 直接写入 LSHandlers 覆盖记录（查看/编辑/所有角色三个槽位全部设置为
+    /// 同一应用），用于 LSSet 与 NSWorkspace API 都搞不定的场景
+    /// （目标应用未声明该内容类型，如 Edge 对 .html）。
+    /// 条目格式与系统设置写入的一致。
+    @discardableResult
+    static func stampOverride(ext: String, bundleID: String) -> Bool {
+        guard let uti = uti(forExtension: ext) else { return false }
+        guard var (dict, handlers) = readHandlers() else { return false }
+        let lowered = ext.lowercased()
+        handlers.removeAll { handler in
+            if let tagClass = handler["LSHandlerContentTagClass"] as? String,
+               tagClass == "public.filename-extension",
+               let tag = handler["LSHandlerContentTag"] as? String {
+                return tag.lowercased() == lowered
+            }
+            if let type = handler["LSHandlerContentType"] as? String {
+                return type == uti
+            }
+            return false
+        }
+        var entry: [String: Any] = [
+            "LSHandlerRoleAll": bundleID,
+            "LSHandlerRoleViewer": bundleID,
+            "LSHandlerRoleEditor": bundleID,
+            "LSHandlerPreferredVersions": [
+                "LSHandlerRoleAll": "-",
+                "LSHandlerRoleViewer": "-",
+                "LSHandlerRoleEditor": "-",
+            ],
+        ]
+        if uti.hasPrefix("dyn.") {
+            entry["LSHandlerContentTagClass"] = "public.filename-extension"
+            entry["LSHandlerContentTag"] = lowered
+        } else {
+            entry["LSHandlerContentType"] = uti
+        }
+        handlers.append(entry)
+        dict["LSHandlers"] = handlers
+        return writeHandlers(dict)
+    }
+
+    // MARK: - 用户覆盖表读写
+
+    private static var lsPrefsPath: String {
+        NSHomeDirectory() + "/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist"
+    }
+
+    private static func readHandlers() -> (dict: [String: Any], handlers: [[String: Any]])? {
+        guard let raw = FileManager.default.contents(atPath: lsPrefsPath),
+              var dict = (try? PropertyListSerialization.propertyList(from: raw, format: nil)) as? [String: Any],
+              let handlers = dict["LSHandlers"] as? [[String: Any]] else {
+            return nil
+        }
+        dict["LSHandlers"] = handlers
+        return (dict, handlers)
+    }
+
+    /// 原子写回并重启 lsd / cfprefsd（launchd 会自动拉起，重新加载偏好）。
+    private static func writeHandlers(_ dict: [String: Any]) -> Bool {
+        guard let raw = FileManager.default.contents(atPath: lsPrefsPath) else { return false }
         let binary = raw.prefix(6).starts(with: [0x62, 0x70, 0x6C, 0x69, 0x73, 0x74]) // "bplist"
         let format: PropertyListSerialization.PropertyListFormat = binary ? .binary : .xml
         guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: format, options: 0) else {
             return false
         }
-        // 原子写回：先写临时文件再 rename 覆盖
-        let tmp = "\(path).tmp-\(ProcessInfo.processInfo.processIdentifier)"
+        let tmp = "\(lsPrefsPath).tmp-\(ProcessInfo.processInfo.processIdentifier)"
         guard FileManager.default.createFile(atPath: tmp, contents: data) else { return false }
-        try? FileManager.default.removeItem(atPath: path)
+        try? FileManager.default.removeItem(atPath: lsPrefsPath)
         do {
-            try FileManager.default.moveItem(atPath: tmp, toPath: path)
+            try FileManager.default.moveItem(atPath: tmp, toPath: lsPrefsPath)
         } catch {
             return false
         }
-        // 重启缓存该偏好的守护进程（launchd 会自动拉起）
         let kill = Process()
         kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         kill.arguments = ["-9", "lsd", "cfprefsd"]
@@ -222,6 +292,31 @@ enum LaunchServices {
         guard let uti = uti(forExtension: ext),
               let bid = UserOverrides.roleAllHandler(forUTI: uti) else { return nil }
         return appInfo(forBundleID: bid)
+    }
+
+    /// 用户覆盖表中该后缀任一角色槽位的持有者（覆盖表为磁盘上的事实来源，
+    /// 可用于复核刚写入但本进程 LS 客户端缓存尚未刷新的场景）。
+    static func overrideSlotHolder(forExtension ext: String) -> String? {
+        guard let uti = uti(forExtension: ext),
+              let (_, handlers) = readHandlers() else { return nil }
+        let lowered = ext.lowercased()
+        for handler in handlers {
+            let matches: Bool
+            if let tagClass = handler["LSHandlerContentTagClass"] as? String,
+               tagClass == "public.filename-extension",
+               let tag = handler["LSHandlerContentTag"] as? String {
+                matches = tag.lowercased() == lowered
+            } else if let type = handler["LSHandlerContentType"] as? String {
+                matches = type == uti
+            } else {
+                matches = false
+            }
+            guard matches else { continue }
+            for key in ["LSHandlerRoleAll", "LSHandlerRoleViewer", "LSHandlerRoleEditor"] {
+                if let bid = handler[key] as? String { return bid }
+            }
+        }
+        return nil
     }
 
     static func appInfo(forBundleID bid: String) -> AppInfo {

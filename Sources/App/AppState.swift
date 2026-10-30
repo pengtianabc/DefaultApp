@@ -178,9 +178,12 @@ final class AppState {
             UserDefaults.standard.set(Array(ownSet), forKey: ownSetKey)
             userOverrides = UserOverrides.load()
         }
-        // 回验：真实打开路径是否已指向目标应用
+        // 回验：真实打开路径是否已指向目标应用。
+        // 回退路径会重启 lsd，本进程 LS 客户端缓存可能仍是旧值——
+        // 此时以覆盖表（磁盘事实来源）为准复核。
         let actual = LaunchServices.actualDefault(forExtension: ext)
         let aligned = actual?.bundleID == bundleID
+            || (ok && LaunchServices.overrideSlotHolder(forExtension: ext) == bundleID)
         let outcome: SetOutcome
         if ok && aligned {
             outcome = .verified(appName: appName)

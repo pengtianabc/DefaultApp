@@ -94,6 +94,13 @@ with `open` after each change.
 Immediately. Once written to LaunchServices, Finder double-click and the
 `open` command use the new default right away — no restart needed.
 
+**Q: Setting failed with “LaunchServices rejected the change”?**
+That API refuses apps that do not declare the file type in their Info.plist
+(Edge, for example, does not declare `public.html`). The tool falls back to
+the macOS 12+ NSWorkspace API (the same one System Settings uses) and finally
+stamps the viewer/editor/all slots directly — verified working with
+undeclared apps (html → Edge).
+
 **Q: Why did `.md` files keep opening in WorkBuddy?**
 LaunchServices stores default handlers per role (viewer / editor / all). Some
 apps (e.g. WorkBuddy) squat on the "all roles" slot only, which made the system
