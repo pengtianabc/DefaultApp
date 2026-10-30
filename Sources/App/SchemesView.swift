@@ -6,17 +6,21 @@ struct SchemesView: View {
     @Environment(AppState.self) private var state
     @Environment(I18n.self) private var i18n
 
-    /// 常见协议目录（https/http 分离，mailto 等）。
-    static let schemes = [
-        "https", "http", "mailto", "ftp", "ssh", "tel", "sms",
-        "facetime", "facetime-audio", "webcal", "xmpp", "zoommtg", "slack",
-    ]
+    /// 协议列表：动态发现（应用声明 + 覆盖表 + 内置常见项），见 LaunchServices.allKnownSchemes()。
+    @State private var schemes: [String] = []
 
     @State private var selected: String?
     @State private var handlers: [String: AppInfo] = [:]
     @State private var candidates: [AppInfo] = []
     @State private var pickedID: String?
     @State private var busy = false
+    @State private var query = ""
+
+    private var visibleSchemes: [String] {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return schemes }
+        return schemes.filter { $0.contains(q) }
+    }
 
     private var current: AppInfo? {
         guard let selected else { return nil }
@@ -38,9 +42,25 @@ struct SchemesView: View {
 
     private var schemeList: some View {
         VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField(i18n.t(.searchPlaceholder), text: $query)
+                    .textFieldStyle(.plain)
+                if !query.isEmpty {
+                    Button { query = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(6)
+            .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+
             List(selection: $selected) {
                 Section(i18n.t(.tabSchemes)) {
-                    ForEach(Self.schemes, id: \.self) { scheme in
+                    ForEach(visibleSchemes, id: \.self) { scheme in
                         SchemeRow(
                             scheme: scheme,
                             handler: handlers[scheme],
@@ -180,14 +200,15 @@ struct SchemesView: View {
 
     @MainActor
     private func reloadAll() async {
+        schemes = LaunchServices.allKnownSchemes()
         var map: [String: AppInfo] = [:]
-        for scheme in Self.schemes {
+        for scheme in schemes {
             if let handler = LaunchServices.schemeDefaultHandler(scheme) {
                 map[scheme] = handler
             }
         }
         handlers = map
-        if selected == nil { selected = Self.schemes.first }
+        if selected == nil { selected = schemes.first }
         await reloadCandidates()
     }
 

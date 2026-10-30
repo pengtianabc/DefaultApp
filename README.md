@@ -32,8 +32,11 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
 ## Features
 
 - **URL scheme management** — beyond file extensions: default browser (`https`),
-  default mail client (`mailto`), `ftp`/`ssh`/`tel` and more, in a dedicated
-  Schemes tab. Changes are effective immediately, same as extensions.
+  default mail client (`mailto`) and more, in a dedicated Schemes tab. The
+  scheme list is **discovered dynamically** (scans installed apps' declared
+  `CFBundleURLTypes` plus your override history), so proxy clients'
+  `vmess`/`vless`/`trojan` schemes show up automatically. Changes are
+  effective immediately, same as extensions.
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)
   and macOS resolves it to a UTI automatically; you can assign a default app to it.
 - **Live current default** — for every extension see the current default app

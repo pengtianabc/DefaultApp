@@ -523,4 +523,55 @@ enum LaunchServices {
         dict["LSHandlers"] = handlers
         return writeHandlers(dict)
     }
+    /// 动态发现所有已知协议：内置常见协议 + 已安装应用 CFBundleURLTypes 声明的 +
+    /// 用户覆盖表中出现过的。不再依赖硬编码列表（代理协议 vmess/vless/trojan…
+    /// 由各客户端自行声明，这里自动收集）。
+    static func allKnownSchemes() -> [String] {
+        var result: [String] = []
+        var seen = Set<String>()
+        func append(_ raw: String) {
+            let lower = raw.trimmingCharacters(in: .whitespaces).lowercased()
+            guard !lower.isEmpty, !seen.contains(lower) else { return }
+            seen.insert(lower)
+            result.append(lower)
+        }
+        // 常见协议：即使当前没有应用声明也保留，便于先设置后装应用
+        for scheme in ["https", "http", "mailto", "ftp", "ssh", "tel", "sms", "facetime", "facetime-audio"] {
+            append(scheme)
+        }
+        // 已安装应用声明的
+        for scheme in declaredSchemesFromApps() { append(scheme) }
+        // 用户覆盖表里的（含已卸载应用的历史记录）
+        if let (_, handlers) = readHandlers() {
+            for handler in handlers {
+                if let scheme = handler["LSHandlerURLScheme"] as? String { append(scheme) }
+            }
+        }
+        return result
+    }
+
+    /// 扫描 /Applications、Utilities、/System/Applications、~/Applications 下所有
+    /// .app 的 CFBundleURLTypes，返回去重排序后的协议列表。
+    private static func declaredSchemesFromApps() -> [String] {
+        let roots = ["/Applications", "/Applications/Utilities",
+                     "/System/Applications", "/System/Applications/Utilities",
+                     NSHomeDirectory() + "/Applications"]
+        var seen = Set<String>()
+        var out: [String] = []
+        for root in roots {
+            guard let entries = try? FileManager.default.contentsOfDirectory(atPath: root) else { continue }
+            for entry in entries where entry.hasSuffix(".app") {
+                guard let plist = Bundle(path: root + "/" + entry)?.infoDictionary else { continue }
+                for type in (plist["CFBundleURLTypes"] as? [[String: Any]]) ?? [] {
+                    for scheme in (type["CFBundleURLSchemes"] as? [String]) ?? [] {
+                        let lower = scheme.lowercased()
+                        guard !lower.isEmpty, !seen.contains(lower) else { continue }
+                        seen.insert(lower)
+                        out.append(lower)
+                    }
+                }
+            }
+        }
+        return out.sorted()
+    }
 }
