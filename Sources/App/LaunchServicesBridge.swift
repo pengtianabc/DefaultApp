@@ -240,14 +240,43 @@ enum LaunchServices {
         return AppInfo(bundleID: bid, url: url, name: name, icon: icon)
     }
 
-    /// 把用户输入解析为 Bundle ID：先按 Bundle ID 直接查；否则在
-    /// /Applications、/Applications/Utilities、~/Applications 下按应用名
-    /// （显示名 / CFBundleName，不区分大小写）匹配 .app。
+    /// 把用户输入解析为 Bundle ID，支持三种形式：
+    /// 1. 路径——指向 .app 本身或其内部任意位置（如 .../Cursor.app/Contents/MacOS/Cursor），
+    ///    自动向上找到包根；支持 ~ 与相对路径。
+    /// 2. Bundle ID——直接校验存在性。
+    /// 3. 应用名——在 /Applications、/Applications/Utilities、/System/Applications、
+    ///    ~/Applications 下按显示名 / CFBundleName 匹配（不区分大小写，须唯一）。
     static func resolveBundleID(_ raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty, NSWorkspace.shared.urlForApplication(withBundleIdentifier: trimmed) != nil {
+        guard !trimmed.isEmpty else { return nil }
+
+        // 1) 路径
+        if trimmed.hasPrefix("/") || trimmed.hasPrefix("~") || trimmed.hasPrefix(".") {
+            var candidate = URL(fileURLWithPath: (trimmed as NSString).expandingTildeInPath)
+                .standardizedFileURL
+            let fileManager = FileManager.default
+            while candidate.path.count > 1 {
+                if candidate.pathExtension == "app" || candidate.lastPathComponent == "app" {
+                    if let bundle = Bundle(url: candidate), let bid = bundle.bundleIdentifier {
+                        return bid
+                    }
+                }
+                if fileManager.fileExists(atPath: candidate.appendingPathComponent("Info.plist").path),
+                   let bundle = Bundle(url: candidate), let bid = bundle.bundleIdentifier {
+                    return bid
+                }
+                if candidate.path == "/" { break }
+                candidate = candidate.deletingLastPathComponent()
+            }
+            return nil
+        }
+
+        // 2) Bundle ID
+        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: trimmed) != nil {
             return trimmed
         }
+
+        // 3) 应用名
         let roots = ["/Applications", "/Applications/Utilities",
                      "/System/Applications", "/System/Applications/Utilities",
                      NSHomeDirectory() + "/Applications"]

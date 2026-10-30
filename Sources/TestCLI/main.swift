@@ -43,9 +43,9 @@ let helpText = """
   \(Term.cyan("get")) <ext>                 Show what opens an extension: double-click resolution,
                             role registration and the all-roles slot, side by side
   \(Term.cyan("list")) <ext>                List every app that declared it can open an extension
-  \(Term.cyan("set")) <ext> <app>           Make an app the default opener — <app>
-                            is an app name (e.g. "Cursor") or a bundle id
-                            (default role: all)
+  \(Term.cyan("set")) <ext> <app>           Make an app the default opener — <app> can be
+                            an app name ("Cursor"), a bundle id, or a path
+                            (/Applications/Cursor.app); default role: all
            [--role viewer|editor|all]
   \(Term.cyan("unset")) <ext>               Remove your override; hand the choice back to macOS
   \(Term.cyan("check"))                     Scan all common extensions for registration mismatches
@@ -225,7 +225,7 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     }
     // 接受应用名或 Bundle ID；名字自动解析
     guard let bundleID = LaunchServices.resolveBundleID(appRef) else {
-        fail("'\(appRef)' matches no installed app — pass an app name (defaultapp list \(cleaned)) or a bundle id")
+        fail("'\(appRef)' is not an app path, app name or bundle id — see defaultapp list \(cleaned) for candidates")
     }
     let target = LaunchServices.appInfo(forBundleID: bundleID)
     let before = LaunchServices.actualDefault(forExtension: cleaned)
@@ -326,7 +326,7 @@ func run() -> Int32 {
         guard let ext = args.positional.first else { fail("usage: defaultapp list <ext>") }
         return commandList(ext, json: args.json)
     case "set":
-        guard args.positional.count >= 2 else { fail("usage: defaultapp set <ext> <app> [--role viewer|editor|all]  (app = name or bundle id)") }
+        guard args.positional.count >= 2 else { fail("usage: defaultapp set <ext> <app> [--role viewer|editor|all]\n  <app>: app name (\"Cursor\"), bundle id, or path (/Applications/Cursor.app)") }
         return commandSet(args.positional[0], appRef: args.positional[1], role: args.role)
     case "unset":
         guard let ext = args.positional.first else { fail("usage: defaultapp unset <ext>") }

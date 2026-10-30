@@ -124,10 +124,10 @@ defaultapp get md                      # what opens .md: double-click resolution
 defaultapp list png                    # every app that declared it can open .png
                                        # (app name first, dim bundle id after; *
                                        # marks the current default)
-defaultapp set txt "Sublime Text"      # set default by app name (auto-resolved to a
-                                       # bundle id; a raw bundle id also works) —
-                                       # stamps all three role slots, effective
-                                       # immediately — same as the app
+defaultapp set txt "Sublime Text"      # set default by app name, bundle id, or path
+                                       # (/Applications/Sublime Text.app — paths
+                                       # inside the bundle work too) — stamps all
+                                       # three role slots, effective immediately
 defaultapp set txt com.sublimetext.4 viewer   # or a single role: viewer|editor|all
 defaultapp unset txt                   # remove your override; hand it back to macOS
 defaultapp check                       # scan all common extensions and list the
