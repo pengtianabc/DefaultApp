@@ -35,7 +35,7 @@ struct SchemesView: View {
                 .frame(minWidth: 560)
                 .layoutPriority(1)
         }
-        .task { await reloadAll() }
+        .task(id: state.refreshToken.uuidString) { await reloadAll() }
     }
 
     // MARK: - 协议列表
@@ -52,6 +52,12 @@ struct SchemesView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                Button { state.refresh() } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help(i18n.t(.refresh))
             }
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))

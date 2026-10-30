@@ -27,7 +27,7 @@ final class I18n {
         case noSelectionTitle, noSelectionDesc
         case refresh
         case statusWelcome, statusInvalid, statusExists, statusAdded, statusRemoved
-        case statusReloaded, statusLoaded, statusSetOk, statusSetFail
+        case statusReloaded, statusLoaded, statusSetOk, statusSetFail, statusExternalChange
         case extSuffixLabel
         case currentBadge
         case sourceUser, sourceSystem
@@ -143,6 +143,7 @@ final class I18n {
         .statusAdded: [.zh: "已添加 %@。", .en: "Added %@."],
         .statusRemoved: [.zh: "已删除 %@。", .en: "Removed %@."],
         .statusReloaded: [.zh: "已从 LaunchServices 重新加载。", .en: "Reloaded from LaunchServices."],
+        .statusExternalChange: [.zh: "检测到系统默认设置发生变化，已自动刷新。", .en: "Detected external changes to default apps — auto-refreshed."],
         .statusLoaded: [.zh: "已加载 %@ 个文件后缀。", .en: "Loaded %@ extensions."],
         .statusSetOk: [.zh: "已将 %@ 的默认打开方式设为「%@」，立即生效。", .en: "Set %@ to open with “%@” — effective immediately."],
         .statusSetFail: [.zh: "设置失败：无法将 %@ 设为 %@ 的默认打开方式。", .en: "Failed to set %@ as the default for %@."],

@@ -70,6 +70,12 @@ struct AppsView: View {
                     .buttonStyle(.plain)
                 }
                 sortPicker
+                Button { state.refresh() } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help(i18n.t(.refresh))
             }
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))

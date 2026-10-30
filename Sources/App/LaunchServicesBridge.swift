@@ -36,10 +36,27 @@ enum UserOverrides {
         var utis: Set<String> = []
     }
 
-    private static let path = NSHomeDirectory()
+    private(set) static var path = NSHomeDirectory()
         + "/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist"
 
+    private static var cache: (snapshot: Snapshot, time: Date)?
+
+    /// 读取用户覆盖表（带 5 秒缓存，避免每行重复解析 plist）。
     static func load() -> Snapshot {
+        if let cache, Date().timeIntervalSince(cache.time) < 5 {
+            return cache.snapshot
+        }
+        let snapshot = loadUncached()
+        cache = (snapshot, Date())
+        return snapshot
+    }
+
+    /// 缓存失效（外部监视到变更、手动刷新、本工具写入后调用）。
+    static func invalidate() {
+        cache = nil
+    }
+
+    private static func loadUncached() -> Snapshot {
         var snapshot = Snapshot()
         guard let dict = NSDictionary(contentsOfFile: path) as? [String: Any],
               let handlers = dict["LSHandlers"] as? [[String: Any]] else {

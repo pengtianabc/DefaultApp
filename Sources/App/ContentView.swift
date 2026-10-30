@@ -489,7 +489,7 @@ private struct SidebarRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 7))
         .onHover { hovered = $0 }
-        .task(id: entry.id) {
+        .task(id: "\(entry.id.uuidString)-\(state.refreshToken.uuidString)") {
             current = state.currentDefault(for: entry.ext)
         }
     }

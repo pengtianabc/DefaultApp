@@ -69,12 +69,83 @@ final class AppState {
 
     private var i18n: I18n { I18n.shared }
 
+    // MARK: - 查询缓存与外部变更监视
+
+    /// 当前默认/候选应用的查询缓存：LaunchServices 解析代价不高，但避免
+    /// 列表滚动时的重复探测（含临时文件创建）。TTL 10 秒；本工具自己的
+    /// 写入与外部监视到变更时立即失效。
+    private var defaultCache: [String: (value: AppInfo?, time: Date)] = [:]
+    private var candidatesCache: [String: (value: [AppInfo], time: Date)] = [:]
+    private static let cacheTTL: TimeInterval = 10
+
+    /// 外部变更监视：每 4 秒 stat 一次 LaunchServices 覆盖表与 /Applications
+    /// 目录的修改时间（stat 几乎零开销），有变化才重建缓存并通知各视图。
+    private var watcher: DispatchSourceTimer?
+    private var lastLSMtime: Date?
+    private var lastAppsMtime: Date?
+
     init() {
         ownSet = Set(UserDefaults.standard.stringArray(forKey: ownSetKey) ?? [])
         statusMessage = I18n.shared.t(.statusWelcome)
         userOverrides = UserOverrides.load()
         load()
         rebuildAppIndex()
+        startExternalWatcher()
+    }
+
+    /// 当前默认：优先使用与双击一致的解析路径；无结果时回退角色查询。
+    func currentDefault(for ext: String) -> AppInfo? {
+        if let hit = defaultCache[ext], Date().timeIntervalSince(hit.time) < Self.cacheTTL {
+            return hit.value
+        }
+        let value = LaunchServices.actualDefault(forExtension: ext)
+            ?? LaunchServices.defaultHandler(forExtension: ext)
+        defaultCache[ext] = (value, Date())
+        return value
+    }
+
+    func candidates(for ext: String) -> [AppInfo] {
+        if let hit = candidatesCache[ext], Date().timeIntervalSince(hit.time) < Self.cacheTTL {
+            return hit.value
+        }
+        let value = LaunchServices.handlers(forExtension: ext)
+        candidatesCache[ext] = (value, Date())
+        return value
+    }
+
+    private func bustQueryCaches() {
+        defaultCache.removeAll()
+        candidatesCache.removeAll()
+    }
+
+    private static func mtime(_ path: String) -> Date? {
+        try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date
+    }
+
+    private func startExternalWatcher() {
+        lastLSMtime = Self.mtime(UserOverrides.path)
+        lastAppsMtime = Self.mtime("/Applications")
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 4, repeating: 4)
+        timer.setEventHandler { [weak self] in
+            self?.checkExternalChanges()
+        }
+        timer.resume()
+        watcher = timer
+    }
+
+    private func checkExternalChanges() {
+        let lsM = Self.mtime(UserOverrides.path)
+        let appsM = Self.mtime("/Applications")
+        guard lsM != lastLSMtime || appsM != lastAppsMtime else { return }
+        lastLSMtime = lsM
+        lastAppsMtime = appsM
+        UserOverrides.invalidate()
+        userOverrides = UserOverrides.load()
+        bustQueryCaches()
+        rebuildAppIndex()
+        refreshToken = UUID()
+        setStatus(i18n.t(.statusExternalChange), success: true)
     }
 
     // MARK: - 增删
@@ -128,20 +199,12 @@ final class AppState {
     // MARK: - 查询
 
     func refresh() {
+        UserOverrides.invalidate()
+        bustQueryCaches()
         userOverrides = UserOverrides.load()
         refreshToken = UUID()
         rebuildAppIndex()
         setStatus(i18n.t(.statusReloaded), success: true)
-    }
-
-    /// 当前默认：优先使用与双击一致的解析路径；无结果时回退角色查询。
-    func currentDefault(for ext: String) -> AppInfo? {
-        LaunchServices.actualDefault(forExtension: ext)
-            ?? LaunchServices.defaultHandler(forExtension: ext)
-    }
-
-    func candidates(for ext: String) -> [AppInfo] {
-        LaunchServices.handlers(forExtension: ext)
     }
 
     /// 默认打开方式的来源。优先看 LaunchServices 用户覆盖表，
@@ -176,6 +239,8 @@ final class AppState {
         if ok {
             ownSet.insert(ext.lowercased())
             UserDefaults.standard.set(Array(ownSet), forKey: ownSetKey)
+            UserOverrides.invalidate()
+            bustQueryCaches()
             userOverrides = UserOverrides.load()
         }
         // 回验：真实打开路径是否已指向目标应用。
