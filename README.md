@@ -133,6 +133,11 @@ defaultapp unset txt                   # remove your override; hand it back to m
 defaultapp check                       # scan all common extensions and list the
                                        # ones where the registered role differs
                                        # from the actual double-click open target
+defaultapp apps                        # the Apps tab as a CLI: every app linked to
+                                       # the common extensions, sorted by default count
+defaultapp apps Cursor                 # one app: extensions it is default for, can
+                                       # open, and its declared document types (UTI
+                                       # and legacy CFBundleTypeExtensions forms)
 defaultapp get md --json               # get / list / check support --json output
 defaultapp version                     # print version
 defaultapp help                        # full help

@@ -227,33 +227,7 @@ final class AppState {
 
     /// 应用声明的文档类型（Info.plist CFBundleDocumentTypes / UT*TypeDeclarations）。
     func declaredTypes(forBundleID bid: String) -> [String] {
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
-              let bundle = Bundle(url: url) else { return [] }
-        let plist: [String: Any] = bundle.infoDictionary ?? [:]
-        var result: [String] = []
-        var seen = Set<String>()
-        for group in ["CFBundleDocumentTypes", "UTExportedTypeDeclarations", "UTImportedTypeDeclarations"] {
-            guard let types = plist[group] as? [[String: Any]] else { continue }
-            for type in types {
-                var uti: String?
-                if let u = type["UTTypeIdentifier"] as? String { uti = u }
-                if let spec = type["UTTypeTagSpecification"] as? [String: Any],
-                   let exts = spec["public.filename-extension"] as? [String] {
-                    for e in exts {
-                        if let u = uti, !seen.contains(u) { seen.insert(u); result.append(u) }
-                        else if uti == nil { result.append(".\(e)") }
-                    }
-                } else if let u = uti, !seen.contains(u) {
-                    seen.insert(u)
-                    result.append(u)
-                }
-                if type["LSItemContentTypes"] is [String], let u = uti, !seen.contains(u) {
-                    seen.insert(u)
-                    result.append(u)
-                }
-            }
-        }
-        return result
+        LaunchServices.declaredTypes(forBundleID: bid)
     }
 
     // MARK: - 工具

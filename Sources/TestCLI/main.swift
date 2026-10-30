@@ -54,6 +54,9 @@ let helpText = """
            [--role viewer|editor|all]
   \(Term.cyan("unset")) <ext>               Remove your override; hand the choice back to macOS
   \(Term.cyan("check"))                     Scan all common extensions for registration mismatches
+  \(Term.cyan("apps")) [app]                List apps linked to the common extensions, or
+                            inspect one app (name / bundle id / path): extensions
+                            it is default for, can open, and its declared types
   \(Term.cyan("version"))                   Print version
   \(Term.cyan("help"))                      Show this help
 
@@ -66,6 +69,7 @@ let helpText = """
   defaultapp set md Cursor
   defaultapp unset md
   defaultapp check --json
+  defaultapp apps Cursor
 
 <ext> is an extension without the dot (md, png, ...). Any extension works —
 macOS resolves it to a UTI automatically.
@@ -271,6 +275,112 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     return 0
 }
 
+/// 把一组后缀按行包装输出（每行约 10 个），用于 apps 详情。
+func printExtChips(_ exts: [String], indent: String = "    ") {
+    var line = indent
+    for ext in exts {
+        let chip = ".\(ext) "
+        if line.count + chip.count > 96, line != indent {
+            print(line)
+            line = indent
+        }
+        line += chip
+    }
+    if line != indent { print(line) }
+}
+
+@MainActor func commandApps(_ appRef: String?, json: Bool) -> Int32 {
+    let catalog = ExtensionCatalog.extensions(for: .all)
+    // 应用 → (默认打开的后缀, 可打开的后缀) 索引，基于常用后缀目录
+    var index: [String: (owns: Set<String>, supports: Set<String>)] = [:]
+    for ext in catalog {
+        guard LaunchServices.uti(forExtension: ext) != nil else { continue }
+        if let owner = LaunchServices.actualDefault(forExtension: ext) {
+            index[owner.bundleID, default: ([], [])].owns.insert(ext)
+        }
+        for app in LaunchServices.handlers(forExtension: ext) {
+            index[app.bundleID, default: ([], [])].supports.insert(ext)
+        }
+    }
+
+    if let appRef {
+        guard let bid = LaunchServices.resolveBundleID(appRef) else {
+            fail("'\(appRef)' is not an app path, app name or bundle id")
+        }
+        let info = LaunchServices.appInfo(forBundleID: bid)
+        let owns = index[bid]?.owns.sorted() ?? []
+        let supports = index[bid]?.supports.subtracting(index[bid]?.owns ?? []).sorted() ?? []
+        let declared = LaunchServices.declaredTypes(forBundleID: bid)
+
+        if json {
+            printJSON([
+                "name": info.name,
+                "bundleID": info.bundleID,
+                "path": info.url?.path ?? NSNull(),
+                "defaultFor": owns,
+                "canOpen": supports,
+                "declaredTypes": declared,
+                "catalogSize": catalog.count,
+            ])
+            return 0
+        }
+
+        print(Term.bold(info.name) + Term.dim("  \(info.bundleID)"))
+        if let path = info.url?.path { print(Term.dim(path)) }
+        print()
+        print(Term.dim("Among \(catalog.count) common extensions:"))
+        print()
+        print("  \(Term.green("✔ default for (\(owns.count))"))")
+        owns.isEmpty ? print(Term.dim("    —")) : printExtChips(owns)
+        print("  \(Term.cyan("→ can also open (\(supports.count))"))")
+        supports.isEmpty ? print(Term.dim("    —")) : printExtChips(supports)
+        if !declared.isEmpty {
+            print("  \(Term.dim("ⓘ declared types (\(declared.count)): \(declared.prefix(12).joined(separator: ", "))\(declared.count > 12 ? ", …" : "")"))")
+        }
+        return 0
+    }
+
+    // 无参数：所有与应用关联的表格
+    let named = index.map { (bid: $0.key, owns: $0.value.owns, supports: $0.value.supports, info: LaunchServices.appInfo(forBundleID: $0.key)) }
+        .sorted {
+            ($0.owns.count != $1.owns.count) ? $0.owns.count > $1.owns.count
+                : $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending
+        }
+
+    if json {
+        printJSON(named.map {
+            [
+                "name": $0.info.name,
+                "bundleID": $0.bid,
+                "path": $0.info.url?.path ?? NSNull(),
+                "defaultFor": $0.owns.sorted(),
+                "canOpen": $0.supports.subtracting($0.owns).sorted(),
+            ] as [String: Any]
+        })
+        return 0
+    }
+
+    print(Term.dim("Apps linked to the \(catalog.count) common extensions") + Term.dim(" — sorted by default-for count"))
+    print()
+    let nameCap = 26
+    let nameWidth = min(named.map { $0.info.name.count }.max() ?? 10, nameCap) + 3
+    let ownWidth = max(named.map { String($0.owns.count).count }.max() ?? 1, 7)
+    let supWidth = max(named.map { String($0.supports.count).count }.max() ?? 1, 6)
+    for (index, row) in named.enumerated() {
+        let name = truncate(row.info.name, nameCap)
+        print("  \(pad("\(index + 1).", 4))"
+              + pad(name, nameWidth)
+              + Term.green(pad("\(row.owns.count)", ownWidth))
+              + Term.dim("default  ")
+              + pad("\(row.supports.count)", supWidth)
+              + Term.dim("opens   ")
+              + Term.dim(row.bid))
+    }
+    print()
+    print(Term.dim("Detail: defaultapp apps <name | bundle-id | path>"))
+    return 0
+}
+
 @MainActor func commandCheck(json: Bool) -> Int32 {
     let catalog = ExtensionCatalog.extensions(for: .all)
     var mismatches: [(ext: String, role: AppInfo?, actual: AppInfo?)] = []
@@ -340,6 +450,8 @@ func run() -> Int32 {
         return commandUnset(ext)
     case "check":
         return commandCheck(json: args.json)
+    case "apps":
+        return commandApps(args.positional.first, json: args.json)
     case "version", "--version", "-v":
         print("defaultapp \(CLIVersion)")
         return 0

@@ -111,6 +111,10 @@ defaultapp set txt "Sublime Text"      # 设置默认打开方式：<app> 支持
 defaultapp set txt "Sublime Text" viewer   # 也可只设查看 / 编辑 / all 角色
 defaultapp unset txt                   # 移除你的设置，交还给系统默认（含注册表级清除）
 defaultapp check                       # 全量扫描常用后缀，列出「角色注册 ≠ 双击实际打开」的项
+defaultapp apps                        # 「应用视图」CLI 版：按默认后缀数排序，列出各应用
+                                       # 的 default/可打开统计
+defaultapp apps Cursor                 # 单个应用详情：默认打开的后缀、可打开的后缀、
+                                       # 声明的文档类型（UTI / 旧式扩展名均可解析）
 defaultapp get md --json               # get / list / check 均支持 --json，便于脚本消费
 defaultapp version                     # 版本号
 defaultapp help                        # 完整帮助

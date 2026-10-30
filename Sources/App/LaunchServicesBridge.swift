@@ -297,4 +297,46 @@ enum LaunchServices {
         }
         return matches.count == 1 ? matches.first : nil
     }
+
+    /// 应用声明的文档类型（Info.plist CFBundleDocumentTypes / UT*TypeDeclarations）。
+    /// 有 UTI 的返回 UTI，仅有扩展名的返回 ".ext" 形式；兼容现代
+    /// UTTypeTagSpecification 与旧式 CFBundleTypeExtensions 两种声明。
+    static func declaredTypes(forBundleID bid: String) -> [String] {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+              let bundle = Bundle(url: url) else { return [] }
+        let plist: [String: Any] = bundle.infoDictionary ?? [:]
+        var result: [String] = []
+        var seen = Set<String>()
+        func append(_ value: String) {
+            guard !seen.contains(value) else { return }
+            seen.insert(value)
+            result.append(value)
+        }
+        for group in ["CFBundleDocumentTypes", "UTExportedTypeDeclarations", "UTImportedTypeDeclarations"] {
+            guard let types = plist[group] as? [[String: Any]] else { continue }
+            for type in types {
+                let uti = type["UTTypeIdentifier"] as? String
+                var emittedExtension = false
+                if let spec = type["UTTypeTagSpecification"] as? [String: Any] {
+                    let raw = spec["public.filename-extension"]
+                    let exts = (raw as? [String]) ?? ((raw as? String).map { [$0] } ?? [])
+                    for e in exts {
+                        emittedExtension = true
+                        if let u = uti { append(u) } else { append(".\(e.lowercased())") }
+                    }
+                } else if let exts = (type["CFBundleTypeExtensions"] as? [String])
+                            ?? ((type["CFBundleTypeExtensions"] as? String).map { [$0] }) {
+                    // 旧式声明：没有 UTI，输出 .ext 形式
+                    for e in exts {
+                        emittedExtension = true
+                        if let u = uti { append(u) } else { append(".\(e.lowercased())") }
+                    }
+                }
+                if let u = uti, (!emittedExtension || type["LSItemContentTypes"] is [String]) {
+                    append(u)
+                }
+            }
+        }
+        return result
+    }
 }
