@@ -8,6 +8,14 @@ struct SchemesView: View {
 
     /// 协议列表：动态发现（应用声明 + 覆盖表 + 内置常见项），见 LaunchServices.allKnownSchemes()。
     @State private var schemes: [String] = []
+    /// 有用户覆盖记录的协议（「用户配置/系统默认」过滤的数据源）。
+    @State private var overrideSchemes: Set<String> = []
+    @State private var sourceFilter: SourceFilter = .all
+
+    private enum SourceFilter: String, CaseIterable, Identifiable {
+        case all, user, system
+        var id: String { rawValue }
+    }
 
     @State private var selected: String?
     @State private var handlers: [String: AppInfo] = [:]
@@ -18,8 +26,14 @@ struct SchemesView: View {
 
     private var visibleSchemes: [String] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !q.isEmpty else { return schemes }
-        return schemes.filter { $0.contains(q) }
+        return schemes.filter { scheme in
+            if !q.isEmpty, !scheme.contains(q) { return false }
+            switch sourceFilter {
+            case .all: return true
+            case .user: return overrideSchemes.contains(scheme)
+            case .system: return !overrideSchemes.contains(scheme)
+            }
+        }
     }
 
     private var current: AppInfo? {
@@ -63,6 +77,16 @@ struct SchemesView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
             .padding(.horizontal, 10)
             .padding(.top, 10)
+
+            Picker("source filter", selection: $sourceFilter) {
+                Text(i18n.t(.filterAll)).tag(SourceFilter.all)
+                Text(i18n.t(.filterUser)).tag(SourceFilter.user)
+                Text(i18n.t(.filterSystem)).tag(SourceFilter.system)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
 
             List(selection: $selected) {
                 Section(i18n.t(.tabSchemes)) {
@@ -207,6 +231,7 @@ struct SchemesView: View {
     @MainActor
     private func reloadAll() async {
         schemes = LaunchServices.allKnownSchemes()
+        overrideSchemes = LaunchServices.schemesWithOverrides()
         var map: [String: AppInfo] = [:]
         for scheme in schemes {
             if let handler = LaunchServices.schemeDefaultHandler(scheme) {

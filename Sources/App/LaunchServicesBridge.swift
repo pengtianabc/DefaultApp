@@ -540,6 +540,18 @@ enum LaunchServices {
         dict["LSHandlers"] = handlers
         return writeHandlers(dict)
     }
+    /// 用户覆盖表中出现过的协议（LSHandlerURLScheme 条目），用于「用户配置」过滤。
+    static func schemesWithOverrides() -> Set<String> {
+        guard let (_, handlers) = readHandlers() else { return [] }
+        var out = Set<String>()
+        for handler in handlers {
+            if let scheme = handler["LSHandlerURLScheme"] as? String {
+                out.insert(scheme.lowercased())
+            }
+        }
+        return out
+    }
+
     /// 动态发现所有已知协议：内置常见协议 + 已安装应用 CFBundleURLTypes 声明的 +
     /// 用户覆盖表中出现过的。不再依赖硬编码列表（代理协议 vmess/vless/trojan…
     /// 由各客户端自行声明，这里自动收集）。
