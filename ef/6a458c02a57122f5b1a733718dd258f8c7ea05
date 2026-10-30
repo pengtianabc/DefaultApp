@@ -1,0 +1,16 @@
+Sources/App/LaunchServicesBridge.swift
+  h_53aea25a6c6376 543-554
+Sources/App/SchemesView.swift
+  h_53aea25a6c6376 11-18,29-36,81-90,234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ef6a458c02a57122f5b1a733718dd258f8c7ea05",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
