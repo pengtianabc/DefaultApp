@@ -16,7 +16,7 @@ struct ContentView: View {
     }
 
     private enum ViewMode: String {
-        case extensions, apps
+        case extensions, apps, schemes
     }
 
     var body: some View {
@@ -26,9 +26,10 @@ struct ContentView: View {
             Picker("", selection: $mode) {
                 Text(i18n.t(.tabExtensions)).tag(ViewMode.extensions)
                 Text(i18n.t(.tabApps)).tag(ViewMode.apps)
+                Text(i18n.t(.tabSchemes)).tag(ViewMode.schemes)
             }
             .pickerStyle(.segmented)
-            .frame(width: 220)
+            .frame(width: 320)
             .padding(.vertical, 8)
             .labelsHidden()
 
@@ -38,6 +39,9 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .apps:
                 AppsView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .schemes:
+                SchemesView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 

@@ -50,6 +50,7 @@ final class I18n {
         case sortName, sortOwns, sortSupports
         case addExtButton, addExtAlertTitle, addExtAlertMsg, cancel
         case ghButton, ghTip, ghTipNew, ghTipUnknown
+        case tabSchemes, schemesIntro, schemeNoHandler, schemeCandidates, schemeUnset, schemeRestoreDone, schemeSetDone
     }
 
     static let shared = I18n()
@@ -198,5 +199,12 @@ final class I18n {
         .ghTip: [.zh: "GitHub 仓库 · 最新版本 %@，点击访问", .en: "GitHub repo · latest release %@ — click to visit"],
         .ghTipNew: [.zh: "发现新版本 %@（当前 v%@），点击查看 Release", .en: "New release %@ available (you're on v%@) — click to view"],
         .ghTipUnknown: [.zh: "GitHub 仓库，点击访问", .en: "GitHub repo — click to visit"],
+        .tabSchemes: [.zh: "URL 协议", .en: "Schemes"],
+        .schemesIntro: [.zh: "设置系统级协议的处理应用：默认浏览器（https）、邮件客户端（mailto）等。与文件后缀一样，写入后立即生效。", .en: "Set the default apps for URL schemes — browser (https), mail client (mailto), etc. Changes are effective immediately, just like extensions."],
+        .schemeNoHandler: [.zh: "暂无应用处理", .en: "No handler"],
+        .schemeCandidates: [.zh: "可处理 %@ 的应用", .en: "Apps that can handle %@:"],
+        .schemeUnset: [.zh: "恢复系统默认", .en: "Restore System Default"],
+        .schemeRestoreDone: [.zh: "已将 %@ 交还给系统默认", .en: "Restored %@ to the system default"],
+        .schemeSetDone: [.zh: "%@ 现在由「%@」处理，立即生效", .en: "%@: now handled by %@, effective immediately"],
     ]
 }

@@ -31,6 +31,9 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
 
 ## Features
 
+- **URL scheme management** — beyond file extensions: default browser (`https`),
+  default mail client (`mailto`), `ftp`/`ssh`/`tel` and more, in a dedicated
+  Schemes tab. Changes are effective immediately, same as extensions.
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)
   and macOS resolves it to a UTI automatically; you can assign a default app to it.
 - **Live current default** — for every extension see the current default app
@@ -140,6 +143,10 @@ defaultapp unset txt                   # remove your override; hand it back to m
 defaultapp check                       # scan all common extensions and list the
                                        # ones where the registered role differs
                                        # from the actual double-click open target
+defaultapp scheme                      # URL schemes: scheme [get|list|set|unset] <scheme> [app]
+defaultapp scheme https                # current handler for https (default browser)
+defaultapp scheme set mailto Mail      # set a scheme handler (name/bundle-id/path)
+defaultapp scheme unset https          # restore the system default
 defaultapp apps                        # the Apps tab as a CLI: every app linked to
                                        # the common extensions, sorted by default count
 defaultapp apps Cursor                 # one app: extensions it is default for, can

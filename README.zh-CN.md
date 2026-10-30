@@ -29,6 +29,9 @@
 
 ## 功能
 
+- **URL 协议管理**——除文件后缀外，还支持系统级协议：默认浏览器（`https`）、
+  默认邮件客户端（`mailto`）、`ftp`/`ssh`/`tel` 等，独立的「URL 协议」标签页，
+  与文件后缀一样写入后立即生效。
 - **支持任意后缀**——不限于常见格式。直接输入任意后缀（如 `abc`），
   macOS 会自动解析为 UTI，即可为其指定默认打开应用。
 - **实时显示当前默认应用**——每个后缀都可查看当前默认应用的图标、名称、Bundle ID，
@@ -117,6 +120,10 @@ defaultapp set txt "Sublime Text"      # 设置默认打开方式：<app> 支持
 defaultapp set txt "Sublime Text" viewer   # 也可只设查看 / 编辑 / all 角色
 defaultapp unset txt                   # 移除你的设置，交还给系统默认（含注册表级清除）
 defaultapp check                       # 全量扫描常用后缀，列出「角色注册 ≠ 双击实际打开」的项
+defaultapp scheme                      # 协议管理：scheme [get|list|set|unset] <scheme> [应用]
+defaultapp scheme https                # 查看 https 当前处理应用（默认浏览器）
+defaultapp scheme set mailto Mail      # 设置协议处理应用（名字/Bundle ID/路径均可）
+defaultapp scheme unset https          # 恢复系统默认
 defaultapp apps                        # 「应用视图」CLI 版：按默认后缀数排序，列出各应用
                                        # 的 default/可打开统计
 defaultapp apps Cursor                 # 单个应用详情：默认打开的后缀、可打开的后缀、

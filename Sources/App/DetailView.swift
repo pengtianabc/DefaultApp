@@ -355,7 +355,7 @@ struct DetailView: View {
     }
 }
 
-private struct CandidateRow: View {
+struct CandidateRow: View {
     let app: AppInfo
     let isCurrent: Bool
     @Environment(I18n.self) private var i18n

@@ -57,6 +57,8 @@ let helpText = """
   \(Term.cyan("apps")) [app]                List apps linked to the common extensions, or
                             inspect one app (name / bundle id / path): extensions
                             it is default for, can open, and its declared types
+  \(Term.cyan("scheme")) [get|list|set|unset] \n                            Manage URL schemes (default browser https, mail client
+                            mailto, ...): scheme / scheme set <s> <app> / scheme unset <s>
   \(Term.cyan("version"))                   Print version
   \(Term.cyan("help"))                      Show this help
 
@@ -70,6 +72,8 @@ let helpText = """
   defaultapp unset md
   defaultapp check --json
   defaultapp apps Cursor
+  defaultapp scheme https
+  defaultapp scheme set mailto "Mail"
 
 <ext> is an extension without the dot (md, png, ...). Any extension works —
 macOS resolves it to a UTI automatically.
@@ -390,6 +394,102 @@ func printExtChips(_ exts: [String], indent: String = "    ") {
     return 0
 }
 
+/// scheme 子命令：defaultapp scheme [get|list|set|unset] <scheme> [app]
+@MainActor func commandScheme(_ positional: [String], json: Bool) -> Int32 {
+    var pos = positional
+    var sub = "get"
+    if let first = pos.first, ["get", "list", "set", "unset"].contains(first) {
+        sub = first
+        pos.removeFirst()
+    }
+    guard let scheme = pos.first?.lowercased(), !scheme.isEmpty else {
+        fail("usage: defaultapp scheme [get|list|set|unset] <scheme> [app]")
+    }
+    let cleanScheme = scheme.hasSuffix(":") ? String(scheme.dropLast()) : scheme
+
+    switch sub {
+    case "get":
+        let current = LaunchServices.schemeDefaultHandler(cleanScheme)
+        if json {
+            printJSON([
+                "scheme": cleanScheme,
+                "handler": appDict(current),
+            ])
+        } else {
+            if let current {
+                print(Term.bold("\(cleanScheme):") + "  \(Term.bold(current.name))  \(Term.dim(current.bundleID))")
+            } else {
+                print(Term.bold("\(cleanScheme):") + "  " + Term.dim("no app handles this scheme yet"))
+            }
+        }
+        return 0
+
+    case "list":
+        let apps = LaunchServices.schemeHandlers(cleanScheme)
+        let current = LaunchServices.schemeDefaultHandler(cleanScheme)?.bundleID
+        if json {
+            printJSON(apps.map { appDict($0, isDefault: $0.bundleID == current) })
+            return 0
+        }
+        guard !apps.isEmpty else {
+            print(Term.dim("No app declares it can handle \(cleanScheme):"))
+            return 0
+        }
+        print(Term.bold("\(cleanScheme):") + Term.dim("  — \(apps.count) app(s), * = current handler"))
+        print()
+        let nameCap = 22
+        let nameWidth = min(apps.map { $0.name.count }.max()!, nameCap) + 3
+        for (index, app) in apps.enumerated() {
+            let isDefault = app.bundleID == current
+            let marker = isDefault ? Term.green("*") : Term.dim(" ")
+            let name = isDefault ? Term.bold(pad(truncate(app.name, nameCap), nameWidth)) : pad(truncate(app.name, nameCap), nameWidth)
+            let id = isDefault ? Term.green(app.bundleID) : Term.dim(app.bundleID)
+            print(" \(marker) \(pad("\(index + 1).", 4))\(name)\(id)")
+        }
+        return 0
+
+    case "set":
+        guard pos.count >= 2 else { fail("usage: defaultapp scheme set <scheme> <app>  (app = name, bundle id or path)") }
+        guard let bundleID = LaunchServices.resolveBundleID(pos[1]) else {
+            fail("'\(pos[1])' is not an app path, app name or bundle id")
+        }
+        let target = LaunchServices.appInfo(forBundleID: bundleID)
+        let before = LaunchServices.schemeDefaultHandler(cleanScheme)
+        guard LaunchServices.setSchemeHandler(bundleID: bundleID, scheme: cleanScheme) else {
+            fail("could not set the handler for \(cleanScheme):")
+        }
+        // 直写回退会重启 lsd，本进程缓存可能短暂过期：稍等重查一次。
+        var after = LaunchServices.schemeDefaultHandler(cleanScheme)
+        if after?.bundleID != bundleID {
+            Thread.sleep(forTimeInterval: 1.0)
+            after = LaunchServices.schemeDefaultHandler(cleanScheme)
+        }
+        print(Term.bold("\(cleanScheme):"))
+        print("  \(Term.dim("before"))  \(before?.name ?? "—")")
+        print("  \(Term.dim("after "))  \(Term.bold(target.name))  \(Term.dim(target.bundleID))")
+        if after?.bundleID == bundleID {
+            print("  " + Term.green("✔ verified") + Term.dim(" — \(cleanScheme): now handled by \(target.name)"))
+            return 0
+        }
+        print("  " + Term.yellow("⚠ written, but this process still resolves to \(after?.name ?? "—")") + Term.dim(" — run 'defaultapp scheme get \(cleanScheme)' to confirm"))
+        return 1
+
+    case "unset":
+        guard LaunchServices.removeSchemeOverride(cleanScheme) else {
+            fail("could not remove the override for \(cleanScheme):")
+        }
+        let fallback = LaunchServices.schemeDefaultHandler(cleanScheme)
+        print(Term.bold("\(cleanScheme):") + "  " + Term.green("✔ override removed") + Term.dim(" — handed back to macOS"))
+        if let fallback {
+            print(Term.dim("  System now resolves to: \(fallback.name) (\(fallback.bundleID))"))
+        }
+        return 0
+
+    default:
+        fail("usage: defaultapp scheme [get|list|set|unset] <scheme> [app]")
+    }
+}
+
 @MainActor func commandCheck(json: Bool) -> Int32 {
     let catalog = ExtensionCatalog.extensions(for: .all)
     var mismatches: [(ext: String, role: AppInfo?, actual: AppInfo?)] = []
@@ -461,6 +561,8 @@ func run() -> Int32 {
         return commandCheck(json: args.json)
     case "apps":
         return commandApps(args.positional.first, json: args.json)
+    case "scheme":
+        return commandScheme(args.positional, json: args.json)
     case "version", "--version", "-v":
         print("defaultapp \(CLIVersion)")
         return 0

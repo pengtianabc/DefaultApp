@@ -264,6 +264,8 @@ enum LaunchServices {
     }
 
     /// 原子写回并重启 lsd / cfprefsd（launchd 会自动拉起，重新加载偏好）。
+    /// 写回后校验一次：若守护进程在我们写入后把内存中的旧状态回写到磁盘
+    /// （lsd 重启时的同步竞态），再写一遍并再次重启。
     private static func writeHandlers(_ dict: [String: Any]) -> Bool {
         guard let raw = FileManager.default.contents(atPath: lsPrefsPath) else { return false }
         let binary = raw.prefix(6).starts(with: [0x62, 0x70, 0x6C, 0x69, 0x73, 0x74]) // "bplist"
@@ -271,20 +273,39 @@ enum LaunchServices {
         guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: format, options: 0) else {
             return false
         }
-        let tmp = "\(lsPrefsPath).tmp-\(ProcessInfo.processInfo.processIdentifier)"
-        guard FileManager.default.createFile(atPath: tmp, contents: data) else { return false }
-        try? FileManager.default.removeItem(atPath: lsPrefsPath)
-        do {
-            try FileManager.default.moveItem(atPath: tmp, toPath: lsPrefsPath)
-        } catch {
-            return false
+        func writeOnce() -> Bool {
+            let tmp = "\(lsPrefsPath).tmp-\(ProcessInfo.processInfo.processIdentifier)-\(UUID().uuidString)"
+            guard FileManager.default.createFile(atPath: tmp, contents: data) else { return false }
+            try? FileManager.default.removeItem(atPath: lsPrefsPath)
+            do {
+                try FileManager.default.moveItem(atPath: tmp, toPath: lsPrefsPath)
+            } catch {
+                return false
+            }
+            restartDaemons()
+            return true
         }
+        guard writeOnce() else { return false }
+        // 校验：守护进程可能在我们写入后把内存中的旧状态异步回写（lsd 的
+        // 持久化有延迟，连续 set→unset 时尤其明显），发现被覆盖就重写，
+        // 最多 3 次、每次间隔 1 秒，给 lsd 的写回窗口留足收敛时间。
+        for attempt in 0..<3 {
+            Thread.sleep(forTimeInterval: attempt == 0 ? 1.0 : 1.5)
+            if let reread = FileManager.default.contents(atPath: lsPrefsPath), reread != data {
+                guard writeOnce() else { return false }
+            } else {
+                return true
+            }
+        }
+        return false
+    }
+
+    private static func restartDaemons() {
         let kill = Process()
         kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         kill.arguments = ["-9", "lsd", "cfprefsd"]
         try? kill.run()
         kill.waitUntilExit()
-        return true
     }
 
     /// 「所有角色」槽位的当前持有者（来自 LaunchServices 用户覆盖表）。
@@ -433,5 +454,73 @@ enum LaunchServices {
             }
         }
         return result
+    }
+    // MARK: - URL Schemes（默认浏览器 https、默认邮件客户端 mailto 等）
+
+    /// 当前处理指定协议的应用（与系统解析一致）。
+    static func schemeDefaultHandler(_ scheme: String) -> AppInfo? {
+        guard let url = URL(string: "\(scheme)://defaultapp-system-check") else { return nil }
+        guard let appURL = NSWorkspace.shared.urlForApplication(toOpen: url),
+              let bid = Bundle(url: appURL)?.bundleIdentifier else { return nil }
+        return appInfo(forBundleID: bid)
+    }
+
+    /// 所有声明可处理该协议的应用，当前默认排最前。
+    static func schemeHandlers(_ scheme: String) -> [AppInfo] {
+        guard let url = URL(string: "\(scheme)://defaultapp-system-check") else { return [] }
+        var bids: [String] = []
+        for appURL in NSWorkspace.shared.urlsForApplications(toOpen: url) {
+            if let bid = Bundle(url: appURL)?.bundleIdentifier, !bids.contains(bid) {
+                bids.append(bid)
+            }
+        }
+        if let cur = schemeDefaultHandler(scheme)?.bundleID, let idx = bids.firstIndex(of: cur) {
+            bids.remove(at: idx)
+            bids.insert(cur, at: 0)
+        }
+        return bids.map(appInfo(forBundleID:))
+    }
+
+    /// 设置协议的默认处理应用，三级回退（与文件类型同一思路）：
+    /// LSSet API → NSWorkspace（系统设置同款）→ 直写覆盖记录。
+    @discardableResult
+    static func setSchemeHandler(bundleID: String, scheme: String) -> Bool {
+        let status = LSSetDefaultHandlerForURLScheme(scheme as CFString, bundleID as CFString)
+        if status == noErr { return true }
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            let semaphore = DispatchSemaphore(value: 0)
+            var nsError: Error?
+            NSWorkspace.shared.setDefaultApplication(at: appURL, toOpenURLsWithScheme: scheme) { error in
+                nsError = error
+                semaphore.signal()
+            }
+            semaphore.wait()
+            if nsError == nil { return true }
+        }
+        return stampSchemeOverride(scheme: scheme, bundleID: bundleID)
+    }
+
+    /// 移除协议的默认处理设置，交还给系统。
+    @discardableResult
+    static func removeSchemeOverride(_ scheme: String) -> Bool {
+        guard var (dict, handlers) = readHandlers() else { return false }
+        let before = handlers.count
+        handlers.removeAll { ($0["LSHandlerURLScheme"] as? String)?.lowercased() == scheme.lowercased() }
+        guard handlers.count < before else { return true }
+        dict["LSHandlers"] = handlers
+        return writeHandlers(dict)
+    }
+
+    /// 直写协议覆盖记录（LSHandlerURLScheme 形式，与系统写入格式一致）。
+    private static func stampSchemeOverride(scheme: String, bundleID: String) -> Bool {
+        guard var (dict, handlers) = readHandlers() else { return false }
+        handlers.removeAll { ($0["LSHandlerURLScheme"] as? String)?.lowercased() == scheme.lowercased() }
+        handlers.append([
+            "LSHandlerURLScheme": scheme,
+            "LSHandlerRoleAll": bundleID,
+            "LSHandlerPreferredVersions": ["LSHandlerRoleAll": "-"],
+        ])
+        dict["LSHandlers"] = handlers
+        return writeHandlers(dict)
     }
 }

@@ -266,6 +266,11 @@ final class AppState {
         setStatus(i18n.t(.statusLoaded, entries.count), success: true)
     }
 
+    /// 供其他视图（如 URL 协议页）直接写入状态栏的反馈。
+    func overrideStatus(_ message: String, success: Bool = true) {
+        setStatus(message, success: success)
+    }
+
     private func save() {
         guard let data = try? JSONEncoder().encode(entries) else { return }
         UserDefaults.standard.set(data, forKey: storeKey)
