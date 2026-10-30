@@ -207,9 +207,10 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     for (index, app) in apps.enumerated() {
         let isDefault = app.bundleID == current
         let marker = isDefault ? Term.green("*") : Term.dim(" ")
-        let id = isDefault ? Term.green(app.bundleID) : app.bundleID
+        // 先对纯文本补白再上色：ANSI 转义序列不算显示宽度
+        let id = isDefault ? Term.green(pad(app.bundleID, idWidth)) : pad(app.bundleID, idWidth)
         let name = isDefault ? Term.bold(app.name) : app.name
-        print(" \(marker) \(pad("\(index + 1).", 4))\(pad(id, idWidth))\(name)")
+        print(" \(marker) \(pad("\(index + 1).", 4))\(id)\(name)")
     }
     return 0
 }
