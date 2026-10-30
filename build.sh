@@ -28,8 +28,11 @@ swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
     Sources/App/*.swift
 
 echo "==> 编译 defaultapp 命令行工具"
+# 注意：必须放在 cli/ 子目录。APFS 默认大小写不敏感，.build/DefaultApp（App 二进制）
+# 与 .build/defaultapp（CLI）会互相覆盖，导致 .app 里的可执行文件被换成 CLI。
+mkdir -p "$OUT/cli"
 swiftc -O -swift-version 5 -sdk "$SDK" -target "$TARGET" \
-    -o "$OUT/defaultapp" \
+    -o "$OUT/cli/defaultapp" \
     Sources/App/LaunchServicesBridge.swift \
     Sources/App/ExtensionCatalog.swift \
     Sources/TestCLI/main.swift
@@ -72,7 +75,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>1.0.1</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSHasLocalizedDisplayName</key>

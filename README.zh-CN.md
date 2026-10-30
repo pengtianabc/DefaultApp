@@ -91,13 +91,13 @@ LaunchServices 的默认打开方式按「角色」分槽位存储（查看 / �
 
 除了图形界面，本项目还带一个功能完整的命令行工具 `defaultapp`，与 App 共用同一套
 LaunchServices 封装——App 里能做的事，终端里都能做，适合远程管理或写进脚本。
-`./build.sh` 会把它编译到 `.build/defaultapp`，Release 页面也提供可直接下载的二进制。
+`./build.sh` 会把它编译到 `.build/cli/defaultapp`，Release 页面也提供可直接下载的二进制。
 
 ```bash
 ./build.sh   # 构建 App 与 defaultapp
 
 # 可选：安装到系统路径，直接当命令用
-install -m 755 .build/defaultapp /usr/local/bin/defaultapp
+install -m 755 .build/cli/defaultapp /usr/local/bin/defaultapp
 ```
 
 ```bash

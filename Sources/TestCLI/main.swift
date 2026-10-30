@@ -3,7 +3,7 @@ import Foundation
 
 // defaultapp — DefaultApp 的命令行工具（与 App 共用同一 LaunchServices 封装）。
 // 版本与 App 保持一致（build.sh 中的 CFBundleShortVersionString）。
-let CLIVersion = "1.0"
+let CLIVersion = "1.0.1"
 
 // MARK: - 终端样式（仅 TTY 输出时着色；尊重 NO_COLOR）
 

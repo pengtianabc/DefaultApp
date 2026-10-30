@@ -106,14 +106,14 @@ holds the "all roles" slot if it ever disagrees.
 Beyond the GUI, the project ships a fully functional command-line tool named
 `defaultapp`, sharing the same LaunchServices bridge as the app — anything the
 app can do also works in a terminal, handy for remote machines and scripting.
-`./build.sh` compiles it to `.build/defaultapp`, and releases also publish a
+`./build.sh` compiles it to `.build/cli/defaultapp`, and releases also publish a
 ready-to-use binary.
 
 ```bash
 ./build.sh   # builds the app and defaultapp
 
 # optional: put it on your PATH
-install -m 755 .build/defaultapp /usr/local/bin/defaultapp
+install -m 755 .build/cli/defaultapp /usr/local/bin/defaultapp
 ```
 
 ```bash

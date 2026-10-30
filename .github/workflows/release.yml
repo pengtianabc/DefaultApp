@@ -28,7 +28,7 @@ jobs:
         run: ditto -c -k --keepParent DefaultApp.app DefaultApp.zip
 
       - name: Stage CLI binary
-        run: cp .build/defaultapp defaultapp && chmod +x defaultapp
+        run: cp .build/cli/defaultapp defaultapp && chmod +x defaultapp
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
