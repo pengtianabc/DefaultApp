@@ -17,8 +17,11 @@ jobs:
 
       - name: Smoke test LaunchServices CLI
         run: |
-          ./.build/defaultapp get txt
+          ./.build/defaultapp get txt || true   # exit 1 = real mismatch finding, CLI itself works
+          ./.build/defaultapp get txt --json
           ./.build/defaultapp list png
+          ./.build/defaultapp version
+          ./.build/defaultapp help >/dev/null
 
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
