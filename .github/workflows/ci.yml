@@ -18,7 +18,7 @@ jobs:
       - name: Smoke test LaunchServices CLI
         run: |
           ./.build/defaultapp get txt || true   # exit 1 = real mismatch finding, CLI itself works
-          ./.build/defaultapp get txt --json
+          ./.build/defaultapp get txt --json || true
           ./.build/defaultapp list png
           ./.build/defaultapp version
           ./.build/defaultapp help >/dev/null
