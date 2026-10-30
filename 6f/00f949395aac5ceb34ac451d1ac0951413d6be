@@ -1,0 +1,14 @@
+.github/workflows/ci.yml
+  h_53aea25a6c6376 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6f00f949395aac5ceb34ac451d1ac0951413d6be",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
