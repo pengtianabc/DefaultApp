@@ -117,17 +117,26 @@ install -m 755 .build/defaultapp /usr/local/bin/defaultapp
 ```
 
 ```bash
-defaultapp get md                      # current default app for .md (double-click
-                                       # resolution + role registration compared;
-                                       # warns with ⚠️ MISMATCH when they disagree)
+defaultapp get md                      # what opens .md: double-click resolution,
+                                       # role registration and the all-roles slot
+                                       # side by side; ⚠ MISMATCH + fix hint when
+                                       # they disagree
 defaultapp list png                    # every app that declared it can open .png
-defaultapp set txt com.sublimetext.4   # set default (all roles, same as the
-                                       # app's "Set as Default", immediate)
+                                       # (* marks the current default)
+defaultapp set txt com.sublimetext.4   # set default (stamps all three role slots,
+                                       # effective immediately — same as the app)
 defaultapp set txt com.sublimetext.4 viewer   # or a single role: viewer|editor|all
+defaultapp unset txt                   # remove your override; hand it back to macOS
 defaultapp check                       # scan all common extensions and list the
                                        # ones where the registered role differs
                                        # from the actual double-click open target
+defaultapp get md --json               # get / list / check support --json output
+defaultapp version                     # print version
+defaultapp help                        # full help
 ```
+
+Output is TTY-aware: aligned columns with colors on a terminal, plain text when
+piped or redirected, and `NO_COLOR=1` forces colors off.
 
 > **CLI downloaded from Releases blocked on first run?** Binaries downloaded via
 > a browser carry the quarantine xattr, so the shell may report

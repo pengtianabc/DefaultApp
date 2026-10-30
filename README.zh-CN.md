@@ -101,16 +101,21 @@ install -m 755 .build/defaultapp /usr/local/bin/defaultapp
 ```
 
 ```bash
-defaultapp get md                      # 查看 .md 的默认打开应用（真实双击解析 + 角色注册双对比，
-                                       # 不一致时会给出 ⚠️ MISMATCH 警告）
-defaultapp list png                    # 列出所有声明可打开 .png 的应用（bundle id + 名称）
-defaultapp set txt com.sublimetext.4   # 设置默认打开方式（默认全部角色）
+defaultapp get md                      # 查看 .md 的默认打开应用（真实双击解析 + 角色注册 +
+                                       # 所有角色槽位三列对照；不一致时给出 ⚠ MISMATCH 与修复命令）
+defaultapp list png                    # 列出所有声明可打开 .png 的应用（* 标记当前默认）
+defaultapp set txt com.sublimetext.4   # 设置默认打开方式（默认写入全部三个角色槽位，立即生效）
 defaultapp set txt com.sublimetext.4 viewer   # 也可只设查看 / 编辑 / all 角色
+defaultapp unset txt                   # 移除你的设置，交还给系统默认（含注册表级清除）
 defaultapp check                       # 全量扫描常用后缀，列出「角色注册 ≠ 双击实际打开」的项
+defaultapp get md --json               # get / list / check 均支持 --json，便于脚本消费
+defaultapp version                     # 版本号
+defaultapp help                        # 完整帮助
 ```
 
 `set` 与 App 内的「设为默认打开方式」完全一致：写入查看/编辑/所有角色全部槽位，
-立即生效；可用 `get` 回验。
+立即生效；可用 `get` 回验。输出为终端排版（列对齐 + 颜色），管道/重定向时自动
+关闭颜色，也可用 `NO_COLOR=1` 显式关闭。
 
 > **从 Release 下载的 CLI 首次运行被拦截？** 浏览器下载的二进制会带隔离标记，
 > 终端里可能报 `cannot be opened` / `killed`。运行一次

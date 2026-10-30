@@ -164,6 +164,59 @@ enum LaunchServices {
         return ok
     }
 
+    /// 移除用户在 LaunchServices 中的覆盖记录，把默认打开方式交还给系统。
+    /// 注意：LSSetDefaultRoleHandlerForContentType 传 NULL 在现代 macOS 返回
+    /// paramErr（无法通过 API 清除），因此直接编辑
+    /// com.apple.launchservices.secure.plist 的 LSHandlers 记录，
+    /// 再重启 lsd / cfprefsd 使其重新加载。
+    @discardableResult
+    static func removeOverride(forExtension ext: String) -> Bool {
+        guard let uti = uti(forExtension: ext) else { return false }
+        let path = NSHomeDirectory()
+            + "/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist"
+        guard let raw = FileManager.default.contents(atPath: path),
+              var dict = (try? PropertyListSerialization.propertyList(from: raw, format: nil)) as? [String: Any],
+              var handlers = dict["LSHandlers"] as? [[String: Any]] else {
+            return false
+        }
+        let before = handlers.count
+        let lowered = ext.lowercased()
+        handlers.removeAll { handler in
+            if let tagClass = handler["LSHandlerContentTagClass"] as? String,
+               tagClass == "public.filename-extension",
+               let tag = handler["LSHandlerContentTag"] as? String {
+                return tag.lowercased() == lowered
+            }
+            if let type = handler["LSHandlerContentType"] as? String {
+                return type == uti
+            }
+            return false
+        }
+        guard handlers.count < before else { return true }  // 本无覆盖，视为成功
+        dict["LSHandlers"] = handlers
+        let binary = raw.prefix(6).starts(with: [0x62, 0x70, 0x6C, 0x69, 0x73, 0x74]) // "bplist"
+        let format: PropertyListSerialization.PropertyListFormat = binary ? .binary : .xml
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: dict, format: format, options: 0) else {
+            return false
+        }
+        // 原子写回：先写临时文件再 rename 覆盖
+        let tmp = "\(path).tmp-\(ProcessInfo.processInfo.processIdentifier)"
+        guard FileManager.default.createFile(atPath: tmp, contents: data) else { return false }
+        try? FileManager.default.removeItem(atPath: path)
+        do {
+            try FileManager.default.moveItem(atPath: tmp, toPath: path)
+        } catch {
+            return false
+        }
+        // 重启缓存该偏好的守护进程（launchd 会自动拉起）
+        let kill = Process()
+        kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        kill.arguments = ["-9", "lsd", "cfprefsd"]
+        try? kill.run()
+        kill.waitUntilExit()
+        return true
+    }
+
     /// 「所有角色」槽位的当前持有者（来自 LaunchServices 用户覆盖表）。
     static func roleAllClaimant(forExtension ext: String) -> AppInfo? {
         guard let uti = uti(forExtension: ext),
