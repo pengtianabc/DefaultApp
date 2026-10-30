@@ -88,6 +88,13 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+# 保险：.app 的可执行文件必须是 GUI（链接 SwiftUI）。防止构建目录中的
+# 命名冲突（如大小写不敏感磁盘上 DefaultApp/defaultapp 互相覆盖）无声进入产物。
+if ! otool -L "$APP_DIR/Contents/MacOS/$APP" | grep -q SwiftUI; then
+    echo "!! $APP_DIR 的可执行文件缺少 SwiftUI 链接（疑似被 CLI 覆盖），中止" >&2
+    exit 1
+fi
+
 codesign --force --sign - "$APP_DIR" 2>/dev/null || true
 
 echo "==> 完成。运行: open \"$APP_DIR\""

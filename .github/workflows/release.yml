@@ -17,6 +17,9 @@ jobs:
       - name: Build app
         run: ./build.sh
 
+      - name: Verify app executable is the GUI (not the CLI)
+        run: otool -L DefaultApp.app/Contents/MacOS/DefaultApp | grep -q SwiftUI
+
       - name: Package DMG (with Applications symlink)
         run: |
           mkdir -p dist
