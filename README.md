@@ -37,6 +37,10 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
   `CFBundleURLTypes` plus your override history), so proxy clients'
   `vmess`/`vless`/`trojan` schemes show up automatically. Changes are
   effective immediately, same as extensions.
+- **Low-footprint auto-refresh** — the app stats the LaunchServices override
+  plist and /Applications every 4 seconds (near-zero cost) and silently
+  refreshes all views and caches when defaults change externally (Finder,
+  app installs); every tab also has a manual refresh button.
 - **Any extension works** — not just common ones. Type any extension (e.g. `abc`)
   and macOS resolves it to a UTI automatically; you can assign a default app to it.
 - **Live current default** — for every extension see the current default app
