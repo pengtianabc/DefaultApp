@@ -26,6 +26,11 @@ func pad(_ s: String, _ width: Int) -> String {
     s.count >= width ? s : s + String(repeating: " ", count: width - s.count)
 }
 
+/// 超长名字截断加省略号，避免个别超长名字撑爆整列对齐。
+func truncate(_ s: String, _ width: Int) -> String {
+    s.count <= width ? s : String(s.prefix(width - 1)) + "…"
+}
+
 @MainActor func fail(_ message: String) -> Never {
     FileHandle.standardError.write(Data("\(Term.red("error:")) \(message)\n".utf8))
     exit(1)
@@ -205,13 +210,15 @@ func appDict(_ app: AppInfo?, isDefault: Bool = false) -> [String: Any] {
     }
     print(Term.bold(".\(cleaned)") + Term.dim("  — \(apps.count) app(s) can open it") + (current == nil ? "" : Term.dim(", * = current default")))
     print()
-    // 名字为主列，Bundle ID 为灰色次要列
-    let nameWidth = min(apps.map { $0.name.count }.max()!, 30) + 3
+    // 名字为主列，Bundle ID 为灰色次要列；名字列限宽 22，超长截断
+    let nameCap = 22
+    let nameWidth = min(apps.map { $0.name.count }.max()!, nameCap) + 3
     for (index, app) in apps.enumerated() {
         let isDefault = app.bundleID == current
         let marker = isDefault ? Term.green("*") : Term.dim(" ")
         // 先对纯文本补白再上色：ANSI 转义序列不算显示宽度
-        let name = isDefault ? Term.bold(pad(app.name, nameWidth)) : pad(app.name, nameWidth)
+        let displayName = truncate(app.name, nameCap)
+        let name = isDefault ? Term.bold(pad(displayName, nameWidth)) : pad(displayName, nameWidth)
         let id = isDefault ? Term.green(app.bundleID) : Term.dim(app.bundleID)
         print(" \(marker) \(pad("\(index + 1).", 4))\(name)\(id)")
     }
