@@ -204,7 +204,9 @@ final class AppState {
         userOverrides = UserOverrides.load()
         refreshToken = UUID()
         rebuildAppIndex()
-        setStatus(i18n.t(.statusReloaded), success: true)
+        // 带上时间戳：连续点击刷新时左下角状态必然变化，用户能明确感知。
+        let time = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
+        setStatus(i18n.t(.statusReloadedAt, time), success: true)
     }
 
     /// 默认打开方式的来源。优先看 LaunchServices 用户覆盖表，

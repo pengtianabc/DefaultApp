@@ -71,6 +71,7 @@ struct DetailView: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 Text(".\(entry.ext)")
+                    .textSelection(.enabled)
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
@@ -153,6 +154,7 @@ struct DetailView: View {
                     sourceBadge
                 }
                 Text(app.bundleID)
+                    .textSelection(.enabled)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -493,6 +495,7 @@ private struct CandidateActionRow: View {
                     }
                 }
                 Text(app.bundleID)
+                    .textSelection(.enabled)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

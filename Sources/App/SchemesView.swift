@@ -23,6 +23,7 @@ struct SchemesView: View {
     @State private var pickedID: String?
     @State private var busy = false
     @State private var query = ""
+    @State private var refreshSpin: Double = 0
 
     private var visibleSchemes: [String] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
@@ -66,12 +67,17 @@ struct SchemesView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                Button { state.refresh() } label: {
+                Button {
+                    refreshSpin += 360
+                    state.refresh()
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .help(i18n.t(.refresh))
+                .rotationEffect(.degrees(refreshSpin))
+                .animation(.snappy(duration: 0.5), value: refreshSpin)
             }
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
@@ -138,6 +144,7 @@ struct SchemesView: View {
     private func header(scheme: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("\(scheme):")
+                .textSelection(.enabled)
                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
@@ -161,7 +168,9 @@ struct SchemesView: View {
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(.green.opacity(0.2)))
                         }
-                        Text(current.bundleID).font(.caption).foregroundStyle(.secondary)
+                        Text(current.bundleID)
+                            .textSelection(.enabled)
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
                     if let url = current.url {

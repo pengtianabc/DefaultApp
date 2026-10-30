@@ -12,6 +12,7 @@ struct AppsView: View {
     @State private var query = ""
     @State private var sort: AppSort = .name
     @State private var showAddExt = false
+    @State private var refreshSpin: Double = 0
     @State private var newExt = ""
 
     /// 应用列表排序方式。
@@ -70,12 +71,17 @@ struct AppsView: View {
                     .buttonStyle(.plain)
                 }
                 sortPicker
-                Button { state.refresh() } label: {
+                Button {
+                    refreshSpin += 360
+                    state.refresh()
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .help(i18n.t(.refresh))
+                .rotationEffect(.degrees(refreshSpin))
+                .animation(.snappy(duration: 0.5), value: refreshSpin)
             }
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
@@ -185,7 +191,9 @@ struct AppsView: View {
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text(app.info.name).font(.title3.bold())
-                        Text(app.bundleID).font(.caption).foregroundStyle(.secondary)
+                        Text(app.bundleID)
+                            .textSelection(.enabled)
+                            .font(.caption).foregroundStyle(.secondary)
                         HStack(spacing: 6) {
                             Label(i18n.t(.appCountOwns, "\(app.owns.count)"), systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)

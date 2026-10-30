@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var newExt = ""
     @State private var query = ""
     @State private var sourceFilter: SourceFilter = .all
+    @State private var refreshSpin: Double = 0
     @State private var showQuickAdd = false
     @State private var mode: ViewMode = .extensions
 
@@ -332,8 +333,13 @@ struct ContentView: View {
                 .truncationMode(.middle)
             Spacer()
             if selectedEntry != nil {
-                Button(i18n.t(.refresh)) { state.refresh() }
-                    .controlSize(.small)
+                Button(i18n.t(.refresh)) {
+                    refreshSpin += 360
+                    state.refresh()
+                }
+                .controlSize(.small)
+                .rotationEffect(.degrees(refreshSpin))
+                .animation(.snappy(duration: 0.5), value: refreshSpin)
             }
         }
         .padding(.horizontal, 12)
@@ -476,6 +482,7 @@ private struct SidebarRow: View {
             Spacer(minLength: 6)
             sourceDot
             Text(current?.name ?? "—")
+                .textSelection(.enabled)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
