@@ -11,7 +11,6 @@ struct AppsView: View {
     @State private var selectedID: String?
     @State private var query = ""
     @State private var sort: AppSort = .name
-    @State private var showAddExt = false
     @State private var refreshSpin: Double = 0
     @State private var newExt = ""
 
@@ -153,7 +152,6 @@ struct AppsView: View {
     private func confirmAdd(for app: AppRelation) {
         let raw = newExt
         newExt = ""
-        showAddExt = false
         let cleaned = AppState.sanitize(raw)
         state.addExtension(raw)
         guard !cleaned.isEmpty else { return }
@@ -204,12 +202,6 @@ struct AppsView: View {
                     }
                     Spacer()
                     VStack(spacing: 8) {
-                        Button {
-                            showAddExt = true
-                        } label: {
-                            Label(i18n.t(.addExtButton), systemImage: "plus.circle")
-                        }
-                        .buttonStyle(.bordered)
                         if let url = app.info.url {
                             Button {
                                 NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -228,16 +220,22 @@ struct AppsView: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: 14).stroke(.separator.opacity(0.5))
                 }
-                .alert(i18n.t(.addExtAlertTitle), isPresented: $showAddExt) {
-                    TextField(i18n.t(.addPlaceholder), text: $newExt)
+
+                // 内联添加后缀：就地输入回车即生效，不再弹框
+                HStack(spacing: 10) {
+                    Text(i18n.t(.addExtInlineLabel, app.info.name))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    TextField(i18n.t(.addExtInlinePlaceholder), text: $newExt)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 200)
                         .onSubmit { confirmAdd(for: app) }
                     Button(i18n.t(.add)) { confirmAdd(for: app) }
                         .keyboardShortcut(.defaultAction)
                         .disabled(newExt.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button(i18n.t(.cancel), role: .cancel) { newExt = "" }
-                } message: {
-                    Text(i18n.t(.addExtAlertMsg, app.info.name))
+                    Spacer()
                 }
+                .padding(.horizontal, 4)
 
                 if !app.owns.isEmpty {
                     section(title: i18n.t(.appOwnsTitle, app.info.name)) {

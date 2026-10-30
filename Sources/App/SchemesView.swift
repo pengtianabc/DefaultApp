@@ -20,7 +20,6 @@ struct SchemesView: View {
     @State private var selected: String?
     @State private var handlers: [String: AppInfo] = [:]
     @State private var candidates: [AppInfo] = []
-    @State private var pickedID: String?
     @State private var busy = false
     @State private var query = ""
     @State private var refreshSpin: Double = 0
@@ -120,7 +119,7 @@ struct SchemesView: View {
         }
     }
 
-    // MARK: - 详情
+    // MARK: - 详情（与文件后缀页同一风格：胶囊标题 + 当前处理卡片 + 常显操作候选行）
 
     private var detailArea: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -128,7 +127,6 @@ struct SchemesView: View {
                 header(scheme: scheme)
                 candidatesSection(scheme: scheme)
                 Spacer(minLength: 0)
-                actionBar(scheme: scheme)
             } else {
                 Spacer()
                 ContentUnavailableView {
@@ -142,7 +140,7 @@ struct SchemesView: View {
     }
 
     private func header(scheme: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("\(scheme):")
                 .textSelection(.enabled)
                 .font(.system(size: 24, weight: .bold, design: .monospaced))
@@ -153,15 +151,16 @@ struct SchemesView: View {
                     LinearGradient(colors: [.teal, .blue], startPoint: .topLeading, endPoint: .bottomTrailing),
                     in: Capsule()
                 )
+
             if let current {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     if let icon = current.icon {
                         Image(nsImage: icon)
-                            .resizable().scaledToFit().frame(width: 30, height: 30)
+                            .resizable().scaledToFit().frame(width: 40, height: 40)
                     }
-                    VStack(alignment: .leading, spacing: 1) {
-                        HStack(spacing: 6) {
-                            Text(current.name).font(.headline)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 8) {
+                            Text(current.name).font(.title3.bold())
                             Text(i18n.t(.currentBadge))
                                 .font(.caption2.weight(.bold))
                                 .foregroundStyle(.green)
@@ -173,16 +172,24 @@ struct SchemesView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    if let url = current.url {
-                        Button { NSWorkspace.shared.activateFileViewerSelecting([url]) } label: {
-                            Label(i18n.t(.showInFinder), systemImage: "folder")
+                    VStack(spacing: 8) {
+                        Button {
+                            Task { await restore(scheme: scheme) }
+                        } label: {
+                            Label(i18n.t(.schemeUnset), systemImage: "arrow.uturn.backward")
                         }
                         .buttonStyle(.bordered)
+                        if let url = current.url {
+                            Button { NSWorkspace.shared.activateFileViewerSelecting([url]) } label: {
+                                Label(i18n.t(.showInFinder), systemImage: "folder")
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
-                .padding(12)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(.separator.opacity(0.5)) }
+                .padding(14)
+                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+                .overlay { RoundedRectangle(cornerRadius: 14).stroke(.separator.opacity(0.5)) }
             } else {
                 Label(i18n.t(.schemeNoHandler), systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
@@ -193,45 +200,41 @@ struct SchemesView: View {
 
     private func candidatesSection(scheme: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(i18n.t(.schemeCandidates, "\(scheme):"))
-                .font(.headline)
+            HStack(spacing: 6) {
+                Text(i18n.t(.schemeCandidates, "\(scheme):"))
+                    .font(.headline)
+                if !candidates.isEmpty {
+                    Text("\(candidates.count)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(.secondary.opacity(0.15)))
+                }
+                Spacer()
+            }
             if candidates.isEmpty {
                 Text(i18n.t(.candidatesEmpty, "\(scheme):"))
                     .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.4)))
             } else {
-                List(selection: $pickedID) {
+                List {
                     ForEach(candidates) { app in
-                        CandidateRow(app: app, isCurrent: app.bundleID == current?.bundleID)
-                            .tag(app.id)
+                        ActionCandidateRow(
+                            app: app,
+                            isCurrent: app.bundleID == current?.bundleID,
+                            onPreview: { preview(app, scheme: scheme) },
+                            onSetDefault: { Task { await apply(app, scheme: scheme) } }
+                        )
                     }
                 }
                 .listStyle(.plain)
-                .frame(minHeight: 160, maxHeight: .infinity)
+                .frame(minHeight: 180, maxHeight: .infinity)
                 .overlay { RoundedRectangle(cornerRadius: 10).stroke(.separator.opacity(0.6)) }
             }
-        }
-    }
-
-    private func actionBar(scheme: String) -> some View {
-        HStack(spacing: 12) {
-            Button {
-                Task { await restore(scheme: scheme) }
-            } label: {
-                Label(i18n.t(.schemeUnset), systemImage: "arrow.uturn.backward")
-            }
-            .buttonStyle(.bordered)
-            .disabled(busy)
-            Spacer()
-            Button {
-                Task { await apply(scheme: scheme) }
-            } label: {
-                Label(i18n.t(.setDefault), systemImage: "checkmark.circle")
-            }
-            .buttonStyle(.borderedProminent)
-            .keyboardShortcut(.defaultAction)
-            .disabled(pickedID == nil || busy)
         }
     }
 
@@ -254,21 +257,39 @@ struct SchemesView: View {
 
     @MainActor
     private func reloadCandidates() async {
-        pickedID = nil
         guard let selected else { candidates = []; return }
         candidates = LaunchServices.schemeHandlers(selected)
     }
 
+    /// 临时打开：用该应用打开一个 scheme:// 测试链接，不修改任何设置。
+    private func preview(_ app: AppInfo, scheme: String) {
+        guard let appURL = app.url, let url = URL(string: "\(scheme)://defaultapp-try") else { return }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { _, error in
+            Task { @MainActor in
+                if let error {
+                    self.state.overrideStatus(I18n.shared.t(.previewFailed, error.localizedDescription), success: false)
+                } else {
+                    self.showRowToast(app.name)
+                }
+            }
+        }
+    }
+
+    private func showRowToast(_ appName: String) {
+        state.overrideStatus(i18n.t(.previewOpened, appName), success: true)
+    }
+
     @MainActor
-    private func apply(scheme: String) async {
-        guard let bid = pickedID else { return }
+    private func apply(_ app: AppInfo, scheme: String) async {
         busy = true
         defer { busy = false }
-        guard LaunchServices.setSchemeHandler(bundleID: bid, scheme: scheme) else { return }
+        guard LaunchServices.setSchemeHandler(bundleID: app.bundleID, scheme: scheme) else { return }
         Thread.sleep(forTimeInterval: 0.3)
         let handler = LaunchServices.schemeDefaultHandler(scheme)
         handlers[scheme] = handler
-        let name = handler?.name ?? bid
+        let name = handler?.name ?? app.bundleID
         state.refresh()
         state.overrideStatus(i18n.t(.schemeSetDone, "\(scheme):", name))
         await reloadCandidates()

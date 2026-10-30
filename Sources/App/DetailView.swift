@@ -280,7 +280,7 @@ struct DetailView: View {
             } else {
                 List {
                     ForEach(candidates) { app in
-                        CandidateActionRow(
+                        ActionCandidateRow(
                             app: app,
                             isCurrent: app.bundleID == current?.bundleID,
                             onPreview: { preview(app) },
@@ -460,29 +460,28 @@ private struct ToastView: View {
     }
 }
 
-// MARK: - 候选行（含悬停操作）
+// MARK: - 候选行（常显操作）
 
-/// 详情页候选行：悬停时浮现「临时打开」与「设为默认」操作。
-/// 当前默认行只展示徽标，不提供操作。
-private struct CandidateActionRow: View {
+/// 候选行：「临时打开」与「设为默认」按钮常显（感知明确），行高充裕。
+/// 文件后缀页与 URL 协议页共用，保持两页风格一致。
+struct ActionCandidateRow: View {
     let app: AppInfo
     let isCurrent: Bool
-    let onPreview: () -> Void
+    var onPreview: (() -> Void)?
     let onSetDefault: () -> Void
     @Environment(I18n.self) private var i18n
-    @State private var hovered = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             if let icon = app.icon {
                 Image(nsImage: icon)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 26, height: 26)
-                    .padding(4)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.5)))
+                    .frame(width: 32, height: 32)
+                    .padding(5)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.5)))
             }
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(app.name).font(.body)
                     if isCurrent {
@@ -501,25 +500,24 @@ private struct CandidateActionRow: View {
             }
             Spacer()
             if !isCurrent {
-                HStack(spacing: 8) {
-                    Button(action: onPreview) {
-                        Image(systemName: "play.circle")
+                HStack(spacing: 10) {
+                    if let onPreview {
+                        Button(action: onPreview) {
+                            Label(i18n.t(.previewShort), systemImage: "play.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .help(i18n.t(.previewTip))
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .help(i18n.t(.previewTip))
                     Button(action: onSetDefault) {
                         Label(i18n.t(.setDefaultShort), systemImage: "checkmark.circle.fill")
                     }
                     .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+                    .controlSize(.regular)
                 }
-                .opacity(hovered ? 1 : 0)
-                .animation(.snappy(duration: 0.15), value: hovered)
             }
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
-        .onHover { hovered = $0 }
     }
 }
