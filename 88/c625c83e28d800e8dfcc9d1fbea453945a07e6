@@ -1,0 +1,20 @@
+README.md
+  h_53aea25a6c6376 125-130
+README.zh-CN.md
+  h_53aea25a6c6376 106-110
+Sources/App/LaunchServicesBridge.swift
+  h_53aea25a6c6376 242-270
+Sources/TestCLI/main.swift
+  h_53aea25a6c6376 46-48,61,203,208-209,214-216,221,226-230,306,329-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "88c625c83e28d800e8dfcc9d1fbea453945a07e6",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
