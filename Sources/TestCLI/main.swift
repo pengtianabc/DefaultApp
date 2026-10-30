@@ -366,14 +366,18 @@ func printExtChips(_ exts: [String], indent: String = "    ") {
     let nameWidth = min(named.map { $0.info.name.count }.max() ?? 10, nameCap) + 3
     let ownWidth = max(named.map { String($0.owns.count).count }.max() ?? 1, 7)
     let supWidth = max(named.map { String($0.supports.count).count }.max() ?? 1, 6)
+    // 表头与数据列使用同一套宽度，保证严格对齐
+    print(Term.bold("  " + pad("", 4)
+              + pad("NAME", nameWidth)
+              + pad("DEFAULT", ownWidth + 2)
+              + pad("OPENS", supWidth + 2)
+              + "BUNDLE ID"))
     for (index, row) in named.enumerated() {
         let name = truncate(row.info.name, nameCap)
         print("  \(pad("\(index + 1).", 4))"
               + pad(name, nameWidth)
-              + Term.green(pad("\(row.owns.count)", ownWidth))
-              + Term.dim("default  ")
-              + pad("\(row.supports.count)", supWidth)
-              + Term.dim("opens   ")
+              + Term.green(pad("\(row.owns.count)", ownWidth)) + "  "
+              + pad("\(row.supports.count)", supWidth) + "  "
               + Term.dim(row.bid))
     }
     print()
