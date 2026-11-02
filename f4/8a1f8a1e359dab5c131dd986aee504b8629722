@@ -1,0 +1,16 @@
+Sources/TestCLI/main.swift
+  h_53aea25a6c6376 6
+build.sh
+  h_53aea25a6c6376 78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f48a1f8a1e359dab5c131dd986aee504b8629722",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
