@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var refreshSpin: Double = 0
     @State private var showQuickAdd = false
     @State private var mode: ViewMode = .extensions
+    @State private var showUpdatePanel = false
 
     private enum SourceFilter: String, CaseIterable, Identifiable {
         case all, user, system
@@ -63,11 +64,8 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                githubButton
-            }
-            ToolbarItem(placement: .primaryAction) {
                 Picker(selection: $i18n.lang) {
-                    Label(i18n.t(.followSystem), systemImage: "macbook").tag(I18n.Lang.system)
+                    Text(i18n.t(.followSystem)).tag(I18n.Lang.system)
                     Text("English").tag(I18n.Lang.en)
                     Text("简体中文").tag(I18n.Lang.zh)
                 } label: {
@@ -77,36 +75,50 @@ struct ContentView: View {
                 .help(i18n.t(.languageLabel))
                 .frame(width: 42)
             }
+            ToolbarItem(placement: .primaryAction) {
+                aboutButton
+            }
         }
     }
 
-    // MARK: - GitHub 版本入口
+    // MARK: - 版本/关于入口（工具栏最右）
 
-    private var githubButton: some View {
+    /// 常态为「关于」入口（i 图标）；检测到新版本时变为升级入口（向上箭头 + 版本号）。
+    private var aboutButton: some View {
         Button {
-            GitHubRelease.shared.visit()
+            GitHubRelease.shared.check()
+            showUpdatePanel = true
         } label: {
-            if let tag = GitHubRelease.shared.latestTag {
-                Label("v\(tag)", systemImage: GitHubRelease.shared.isNewer ? "arrow.up.circle.fill" : "tag")
-                    .foregroundStyle(GitHubRelease.shared.isNewer ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+            switch GitHubRelease.shared.status {
+            case .updateAvailable(let info):
+                Label(info.tag, systemImage: "arrow.up.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.callout.weight(.semibold))
+            default:
+                Label("v\(GitHubRelease.shared.currentVersion)", systemImage: "info.circle")
+                    .foregroundStyle(.secondary)
                     .font(.callout.weight(.medium))
-            } else {
-                Label(i18n.t(.ghButton), systemImage: "link")
             }
         }
         .buttonStyle(.plain)
         .help(githubTooltip)
+        .popover(isPresented: $showUpdatePanel, arrowEdge: .bottom) {
+            UpdatePanel()
+                .environment(i18n)
+        }
     }
 
     private var githubTooltip: String {
-        if let tag = GitHubRelease.shared.latestTag {
-            if GitHubRelease.shared.isNewer {
-                let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-                return i18n.t(.ghTipNew, tag, current)
-            }
+        switch GitHubRelease.shared.status {
+        case .updateAvailable(let info):
+            return i18n.t(.ghTipNew, info.tag, GitHubRelease.shared.currentVersion)
+        case .dev(let tag):
+            return i18n.t(.updateDev, GitHubRelease.shared.currentVersion, tag)
+        case .uptodate(let tag):
             return i18n.t(.ghTip, tag)
+        default:
+            return GitHubRelease.shared.latestTag.map { i18n.t(.ghTip, $0) } ?? i18n.t(.ghTipUnknown)
         }
-        return i18n.t(.ghTipUnknown)
     }
 
     private var extensionsSplit: some View {

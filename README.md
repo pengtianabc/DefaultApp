@@ -68,6 +68,11 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
   you immediately see real default apps; the list is yours to edit afterward.
 - **In-app language switch** — 简体中文 / English / Follow System, switchable
   live from the toolbar.
+- **In-app updater** — the toolbar version button checks GitHub for new
+  releases; when one is available it turns into an update entry with release
+  notes, download progress, and one-click download-and-install (the app
+  replaces itself and relaunches). Dev builds (version higher than the latest
+  release) are detected and labeled instead of prompting.
 - Your extension list is persisted between launches.
 
 ## Build & Run

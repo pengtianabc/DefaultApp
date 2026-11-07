@@ -50,6 +50,9 @@ final class I18n {
         case sortName, sortOwns, sortSupports
         case addExtButton, addExtAlertTitle, addExtAlertMsg, cancel
         case ghButton, ghTip, ghTipNew, ghTipUnknown
+        case updateCurrent, updateFound, updateNotes, updateLater, visitGitHub
+        case updateInstall, updateDownloading, updateInstalling, updateFailed, updateRetry
+        case updateUnknown, updateUpToDate, updateDev, updateDevDesc
         case tabSchemes, schemesIntro, schemeNoHandler, schemeCandidates, schemeUnset, schemeRestoreDone, schemeSetDone
         case setDefaultShort, previewShort, previewTip, previewOpened, previewFailed
         case addExtInlineLabel, addExtInlinePlaceholder
@@ -203,6 +206,20 @@ final class I18n {
         .ghTip: [.zh: "GitHub 仓库 · 最新版本 %@，点击访问", .en: "GitHub repo · latest release %@ — click to visit"],
         .ghTipNew: [.zh: "发现新版本 %@（当前 v%@），点击查看 Release", .en: "New release %@ available (you're on v%@) — click to view"],
         .ghTipUnknown: [.zh: "GitHub 仓库，点击访问", .en: "GitHub repo — click to visit"],
+        .updateCurrent: [.zh: "当前版本 v%@", .en: "Current version v%@"],
+        .updateFound: [.zh: "发现新版本 %@", .en: "New version %@"],
+        .updateNotes: [.zh: "更新内容", .en: "What's New"],
+        .updateLater: [.zh: "稍后", .en: "Later"],
+        .visitGitHub: [.zh: "前往 GitHub", .en: "Visit GitHub"],
+        .updateInstall: [.zh: "下载并安装 %@", .en: "Download & Install %@"],
+        .updateDownloading: [.zh: "已下载 %@ / %@", .en: "Downloaded %@ of %@"],
+        .updateInstalling: [.zh: "正在安装，即将自动重启应用…", .en: "Installing, relaunching shortly…"],
+        .updateFailed: [.zh: "更新失败：%@", .en: "Update failed: %@"],
+        .updateRetry: [.zh: "重试", .en: "Retry"],
+        .updateUnknown: [.zh: "未能获取版本信息，请检查网络后访问 GitHub 查看", .en: "Couldn't check for updates. Check your network, or visit GitHub."],
+        .updateUpToDate: [.zh: "已是最新版本（%@）", .en: "You're up to date (%@)"],
+        .updateDev: [.zh: "开发版本 v%@（高于线上 %@）", .en: "Dev build v%@ (ahead of %@)"],
+        .updateDevDesc: [.zh: "当前运行的是本地构建版本，版本号高于线上最新 Release，更新检查始终以线上为准。", .en: "You're running a local dev build, ahead of the latest release. Update checks always use the online release."],
         .tabSchemes: [.zh: "URL 协议", .en: "Schemes"],
         .schemesIntro: [.zh: "设置系统级协议的处理应用：默认浏览器（https）、邮件客户端（mailto）等。与文件后缀一样，写入后立即生效。", .en: "Set the default apps for URL schemes — browser (https), mail client (mailto), etc. Changes are effective immediately, just like extensions."],
         .schemeNoHandler: [.zh: "暂无应用处理", .en: "No handler"],
