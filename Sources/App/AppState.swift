@@ -60,6 +60,8 @@ final class AppState {
     var pendingAppFocus: String?
     /// 应用视图双击/拖放后缀 → 后缀视图选中该后缀（无点前缀）。
     var pendingExtFocus: String?
+    /// 应用视图双击协议胶囊 → 协议视图选中该协议（小写、无冒号）。
+    var pendingSchemeFocus: String?
 
     /// LaunchServices 用户覆盖表快照（用于区分用户配置 / 系统默认）。
     private(set) var userOverrides = UserOverrides.Snapshot()

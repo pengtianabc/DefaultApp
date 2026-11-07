@@ -256,6 +256,14 @@ struct AppsView: View {
                 if !app.supports.isEmpty {
                     supportsSection(app)
                 }
+
+                // URL 协议维度：该应用声明能处理的协议，双击跳到协议页
+                let schemes = LaunchServices.urlSchemes(forBundleID: app.bundleID)
+                if !schemes.isEmpty {
+                    section(title: i18n.t(.appSchemesTitle, app.info.name)) {
+                        schemeChips(schemes)
+                    }
+                }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -335,6 +343,34 @@ struct AppsView: View {
                     .help(i18n.t(.chipJumpTip))
                     // 两个方向的胶囊都可拖：默认打开 ⇄ 可打开
                     .draggable(ext)
+            }
+        }
+    }
+
+    /// URL 协议胶囊：与协议页同一视觉语言（teal/blue 链接徽标），双击跳转。
+    private func schemeChips(_ schemes: [String]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 6)], spacing: 6) {
+            ForEach(schemes, id: \.self) { scheme in
+                HStack(spacing: 6) {
+                    Image(systemName: "link")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 14, height: 14)
+                        .background(
+                            LinearGradient(colors: [.teal, .blue],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: RoundedRectangle(cornerRadius: 4)
+                        )
+                    Text("\(scheme):")
+                        .font(.callout.monospaced())
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.25)))
+                .overlay(DoubleClickRecognizer { state.pendingSchemeFocus = scheme })
+                .help(i18n.t(.schemeJumpTip))
             }
         }
     }

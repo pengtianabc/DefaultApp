@@ -49,6 +49,12 @@ struct SchemesView: View {
                 .frame(minWidth: 520)
                 .layoutPriority(1)
         }
+        .onChange(of: state.pendingSchemeFocus, initial: true) { _, scheme in
+            // initial: true——从应用页双击跳过来时，本视图在值设置之后才挂载。
+            guard let scheme else { return }
+            selected = scheme
+            state.pendingSchemeFocus = nil
+        }
         .task(id: state.refreshToken.uuidString) { await reloadAll() }
     }
 

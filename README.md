@@ -57,7 +57,9 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
   that extension's detail. In Apps, the “Default For” zone always shows a
   dashed drop frame (highlighted while hovering): drop a “Can Open” chip in
   to make that app the default, or drag a “Default For” chip down to
-  “Can Open” to unset it and hand the choice back to macOS.
+  “Can Open” to unset it and hand the choice back to macOS. The app's
+  declared URL schemes are listed too — double-click one to jump to the
+  Schemes tab with it selected.
 - **User vs. System marker** — each extension's handler is tagged
   **CUSTOM** (explicitly set by the user, stored in the LaunchServices user
   preference database) or **SYSTEM** (inferred from app declarations), so you

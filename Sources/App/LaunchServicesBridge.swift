@@ -357,13 +357,37 @@ enum LaunchServices {
         return nil
     }
 
+    /// 指定应用声明的 URL 协议（Info.plist CFBundleURLTypes → CFBundleURLSchemes），
+    /// 去重、小写、排序。应用视图的「URL 协议」区块数据源。
+    static func urlSchemes(forBundleID bid: String) -> [String] {
+        if let hit = schemeCache[bid] { return hit }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+              let plist = Bundle(url: url)?.infoDictionary else { return [] }
+        var seen = Set<String>()
+        var out: [String] = []
+        for type in (plist["CFBundleURLTypes"] as? [[String: Any]]) ?? [] {
+            for scheme in (type["CFBundleURLSchemes"] as? [String]) ?? [] {
+                let lower = scheme.trimmingCharacters(in: .whitespaces).lowercased()
+                guard !lower.isEmpty, !seen.contains(lower) else { continue }
+                seen.insert(lower)
+                out.append(lower)
+            }
+        }
+        let result = out.sorted()
+        schemeCache[bid] = result
+        return result
+    }
+
     /// 应用信息进程内缓存：icon 加载（读 .app 渲染 icns）单次 5~20ms，
     /// candidates 列表一次要解析 N 个应用，不缓存会让每次点击卡顿几百毫秒。
     /// 由外部变更监视器与手动 refresh 负责失效（应用安装/更新时）。
     private static var appInfoCache: [String: AppInfo] = [:]
 
+    private static var schemeCache: [String: [String]] = [:]
+
     static func invalidateAppInfoCache() {
         appInfoCache.removeAll()
+        schemeCache.removeAll()
     }
 
     static func appInfo(forBundleID bid: String) -> AppInfo {

@@ -64,6 +64,10 @@ struct ContentView: View {
             }
             state.pendingExtFocus = nil
         }
+        .onChange(of: state.pendingSchemeFocus) { _, scheme in
+            guard scheme != nil else { return }
+            mode = .schemes
+        }
         .task {
             if Snapshotter.isActive {
                 state.selectedID = state.entries.first(where: { $0.ext == "md" })?.id
