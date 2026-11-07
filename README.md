@@ -171,8 +171,8 @@ defaultapp scheme unset https          # restore the system default
 defaultapp apps                        # the Apps tab as a CLI: every app linked to
                                        # the common extensions, sorted by default count
 defaultapp apps Cursor                 # one app: extensions it is default for, can
-                                       # open, and its declared document types (UTI
-                                       # and legacy CFBundleTypeExtensions forms)
+                                       # open, declared document types (UTI and legacy
+                                       # CFBundleTypeExtensions forms) and URL schemes
 defaultapp get md --json               # get / list / check support --json output
 defaultapp version                     # print version
 defaultapp help                        # full help

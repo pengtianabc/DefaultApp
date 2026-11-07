@@ -138,7 +138,8 @@ defaultapp scheme unset https          # 恢复系统默认
 defaultapp apps                        # 「应用视图」CLI 版：按默认后缀数排序，列出各应用
                                        # 的 default/可打开统计
 defaultapp apps Cursor                 # 单个应用详情：默认打开的后缀、可打开的后缀、
-                                       # 声明的文档类型（UTI / 旧式扩展名均可解析）
+                                       # 声明的文档类型（UTI / 旧式扩展名均可解析）、
+                                       # 声明的 URL 协议
 defaultapp get md --json               # get / list / check 均支持 --json，便于脚本消费
 defaultapp version                     # 版本号
 defaultapp help                        # 完整帮助

@@ -320,6 +320,7 @@ func printExtChips(_ exts: [String], indent: String = "    ") {
         let owns = index[bid]?.owns.sorted() ?? []
         let supports = index[bid]?.supports.subtracting(index[bid]?.owns ?? []).sorted() ?? []
         let declared = LaunchServices.declaredTypes(forBundleID: bid)
+        let schemes = LaunchServices.urlSchemes(forBundleID: bid)
 
         if json {
             printJSON([
@@ -329,6 +330,7 @@ func printExtChips(_ exts: [String], indent: String = "    ") {
                 "defaultFor": owns,
                 "canOpen": supports,
                 "declaredTypes": declared,
+                "schemes": schemes,
                 "catalogSize": catalog.count,
             ])
             return 0
