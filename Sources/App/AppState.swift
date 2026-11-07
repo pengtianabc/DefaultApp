@@ -56,6 +56,11 @@ final class AppState {
     /// Bumped by the Refresh button so detail views re-query LaunchServices.
     var refreshToken = UUID()
 
+    /// 跨页导航意向：后缀视图双击默认应用 → 应用视图聚焦该应用（bundleID）。
+    var pendingAppFocus: String?
+    /// 应用视图双击/拖放后缀 → 后缀视图选中该后缀（无点前缀）。
+    var pendingExtFocus: String?
+
     /// LaunchServices 用户覆盖表快照（用于区分用户配置 / 系统默认）。
     private(set) var userOverrides = UserOverrides.Snapshot()
     /// 应用 ↔ 后缀关系索引（应用视图数据源）。
@@ -163,6 +168,16 @@ final class AppState {
         }
         insert([cleaned])
         setStatus(i18n.t(.statusAdded, ".\(cleaned)"), success: true)
+    }
+
+    /// 导航辅助：确保后缀在列表中（静默，不刷状态消息、不改变选中项）。
+    func ensureExtension(_ ext: String) {
+        let cleaned = Self.sanitize(ext)
+        guard !cleaned.isEmpty, !entries.contains(where: { $0.ext == cleaned }) else { return }
+        entries.append(Entry(id: UUID(), ext: cleaned))
+        entries.sort { $0.ext.localizedCaseInsensitiveCompare($1.ext) == .orderedAscending }
+        save()
+        rebuildAppIndex()
     }
 
     /// 批量添加（常用后缀面板），返回实际新增数量。

@@ -53,6 +53,7 @@ final class I18n {
         case updateCurrent, updateFound, updateNotes, updateLater, visitGitHub
         case updateInstall, updateDownloading, updateInstalling, updateFailed, updateRetry
         case updateUnknown, updateUpToDate, updateDev, updateDevDesc
+        case jumpNoDefault, jumpToAppTip, chipJumpTip, ownsEmptyHint, ownsDropDone
         case tabSchemes, schemesIntro, schemeNoHandler, schemeCandidates, schemeUnset, schemeRestoreDone, schemeSetDone
         case setDefaultShort, previewShort, previewTip, previewOpened, previewFailed
         case addExtInlineLabel, addExtInlinePlaceholder
@@ -220,6 +221,11 @@ final class I18n {
         .updateUpToDate: [.zh: "已是最新版本（%@）", .en: "You're up to date (%@)"],
         .updateDev: [.zh: "开发版本 v%@（高于线上 %@）", .en: "Dev build v%@ (ahead of %@)"],
         .updateDevDesc: [.zh: "当前运行的是本地构建版本，版本号高于线上最新 Release，更新检查始终以线上为准。", .en: "You're running a local dev build, ahead of the latest release. Update checks always use the online release."],
+        .jumpNoDefault: [.zh: "「.%@」还没有默认应用，先在右侧设置一个", .en: ".%@ has no default app yet — set one on the right first"],
+        .jumpToAppTip: [.zh: "双击在「应用」页查看该应用", .en: "Double-click to inspect this app in Apps"],
+        .chipJumpTip: [.zh: "双击查看该后缀详情", .en: "Double-click to view this extension"],
+        .ownsEmptyHint: [.zh: "把下方「可打开」的后缀拖到这里，设为该应用默认打开", .en: "Drag extensions here from “Can Open” to make this app their default"],
+        .ownsDropDone: [.zh: "已将 %1$@ 设为「%2$@」的默认打开方式", .en: "Set %1$@ to open by default with %2$@"],
         .tabSchemes: [.zh: "URL 协议", .en: "Schemes"],
         .schemesIntro: [.zh: "设置系统级协议的处理应用：默认浏览器（https）、邮件客户端（mailto）等。与文件后缀一样，写入后立即生效。", .en: "Set the default apps for URL schemes — browser (https), mail client (mailto), etc. Changes are effective immediately, just like extensions."],
         .schemeNoHandler: [.zh: "暂无应用处理", .en: "No handler"],

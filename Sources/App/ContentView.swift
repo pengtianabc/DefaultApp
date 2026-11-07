@@ -52,6 +52,18 @@ struct ContentView: View {
         }
         .frame(minWidth: 800, minHeight: 540)
         .tint(.indigo)
+        .onChange(of: state.pendingAppFocus) { _, bundleID in
+            guard bundleID != nil else { return }
+            mode = .apps
+        }
+        .onChange(of: state.pendingExtFocus) { _, ext in
+            guard let ext else { return }
+            mode = .extensions
+            if let entry = state.entries.first(where: { $0.ext == ext }) {
+                state.selectedID = entry.id
+            }
+            state.pendingExtFocus = nil
+        }
         .task {
             if Snapshotter.isActive {
                 state.selectedID = state.entries.first(where: { $0.ext == "md" })?.id
@@ -509,6 +521,15 @@ private struct SidebarRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 7))
         .onHover { hovered = $0 }
+        .onTapGesture(count: 2) {
+            // 双击：跳到「应用」页查看当前默认应用
+            guard let app = state.currentDefault(for: entry.ext) else {
+                state.overrideStatus(i18n.t(.jumpNoDefault, entry.ext), success: false)
+                return
+            }
+            state.pendingAppFocus = app.bundleID
+        }
+        .help(i18n.t(.jumpToAppTip))
         .task(id: "\(entry.id.uuidString)-\(state.refreshToken.uuidString)") {
             current = state.currentDefault(for: entry.ext)
         }

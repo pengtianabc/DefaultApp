@@ -51,6 +51,12 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
   the double-click resolution path to confirm it actually took effect.
 - **Apps view** — inspect app ↔ extension relations per app: which extensions
   it owns as default, which it can open, and its declared document types.
+- **Cross-view navigation** — double-click an extension in the sidebar to jump
+  to the Apps tab focused on its current default app (also works on the
+  current-app card); double-click an extension chip in Apps to jump back to
+  that extension's detail. In Apps, drag a “Can Open” chip into the
+  “Default For” area to make that app the default — the empty section shows a
+  dashed drop target.
 - **User vs. System marker** — each extension's handler is tagged
   **CUSTOM** (explicitly set by the user, stored in the LaunchServices user
   preference database) or **SYSTEM** (inferred from app declarations), so you

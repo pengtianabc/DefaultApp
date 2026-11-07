@@ -53,6 +53,14 @@ struct AppsView: View {
                 .frame(minWidth: 520)
                 .layoutPriority(1)
         }
+        .onChange(of: state.pendingAppFocus, initial: true) { _, bundleID in
+            // initial: true——从后缀页双击跳过来时，本视图是挂载后才出现的新值，
+            // 普通 onChange 不会触发，必须随挂载立即检查一次。
+            guard let bundleID else { return }
+            state.addInspectedApp(bundleID)
+            selectedID = bundleID
+            state.pendingAppFocus = nil
+        }
     }
 
     // MARK: - 应用列表
@@ -237,9 +245,17 @@ struct AppsView: View {
                 }
                 .padding(.horizontal, 4)
 
-                if !app.owns.isEmpty {
+                if !app.owns.isEmpty || !app.supports.isEmpty {
                     section(title: i18n.t(.appOwnsTitle, app.info.name)) {
-                        extChips(app.owns, highlighted: true)
+                        if app.owns.isEmpty {
+                            ownsEmptyTarget
+                        } else {
+                            extChips(app.owns, highlighted: true)
+                        }
+                    }
+                    .dropDestination(for: String.self) { items, _ in
+                        dropExtensions(items, app: app)
+                        return true
                     }
                 }
 
@@ -281,23 +297,79 @@ struct AppsView: View {
     private func extChips(_ exts: [String], highlighted: Bool) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 6)], spacing: 6) {
             ForEach(exts, id: \.self) { ext in
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(AnyShapeStyle(highlighted ? Color.green : Color.secondary.opacity(0.4)))
-                        .frame(width: 6, height: 6)
-                    Text(".\(ext)")
-                        .font(.callout.monospaced())
-                        .lineLimit(1)
+                let chip = chipContent(ext, highlighted: highlighted)
+                    .onTapGesture(count: 2) { focusExtension(ext) }
+                    .help(i18n.t(.chipJumpTip))
+                if highlighted {
+                    chip
+                } else {
+                    // 「可打开」的胶囊可拖拽到上方「默认打开」区，一键设为默认
+                    chip.draggable(ext)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(highlighted ? AnyShapeStyle(.green.opacity(0.08)) : AnyShapeStyle(.quaternary.opacity(0.25)))
-                )
             }
         }
+    }
+
+    private func chipContent(_ ext: String, highlighted: Bool) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(AnyShapeStyle(highlighted ? Color.green : Color.secondary.opacity(0.4)))
+                .frame(width: 6, height: 6)
+            Text(".\(ext)")
+                .font(.callout.monospaced())
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 7)
+                .fill(highlighted ? AnyShapeStyle(.green.opacity(0.08)) : AnyShapeStyle(.quaternary.opacity(0.25)))
+        )
+    }
+
+    /// 双击胶囊：跳到「文件后缀」页并选中该后缀（不在列表时静默补入）。
+    private func focusExtension(_ ext: String) {
+        state.ensureExtension(ext)
+        state.pendingExtFocus = ext
+    }
+
+    /// 空「默认打开」区的拖放占位提示（同时是投放目标）。
+    private var ownsEmptyTarget: some View {
+        Text(i18n.t(.ownsEmptyHint))
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 14)
+            .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.2)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                    .foregroundStyle(.secondary.opacity(0.5))
+            )
+    }
+
+    /// 投放处理：把拖来的后缀逐个设为该应用默认打开。
+    private func dropExtensions(_ items: [String], app: AppRelation) {
+        var done: [String] = []
+        for raw in items {
+            let ext = AppState.sanitize(raw)
+            guard !ext.isEmpty else { continue }
+            state.ensureExtension(ext)
+            let outcome = state.setDefault(bundleID: app.bundleID, for: ext, role: .all)
+            switch outcome {
+            case .verified, .unconfirmed:
+                done.append(".\(ext)")
+            case .failed:
+                state.overrideStatus(i18n.t(.toastSetFail, app.info.name, ext), success: false)
+            }
+        }
+        if !done.isEmpty {
+            state.overrideStatus(i18n.t(.ownsDropDone, done.joined(separator: " "), app.info.name), success: true)
+        }
+        state.refresh()
     }
 }
 

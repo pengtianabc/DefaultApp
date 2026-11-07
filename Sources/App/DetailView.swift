@@ -169,6 +169,12 @@ struct DetailView: View {
             }
         }
         .padding(16)
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .onTapGesture(count: 2) {
+            // 双击：跳到「应用」页查看该应用
+            state.pendingAppFocus = app.bundleID
+        }
+        .help(i18n.t(.jumpToAppTip))
         .background(
             Color(nsColor: .controlBackgroundColor),
             in: RoundedRectangle(cornerRadius: 14)
