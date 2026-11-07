@@ -194,6 +194,12 @@ struct SchemesView: View {
                     }
                 }
                 .padding(14)
+                .contentShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(DoubleClickRecognizer {
+                    // 双击：跳到「应用」页查看该处理应用（与后缀页当前应用卡片一致）
+                    state.pendingAppFocus = current.bundleID
+                })
+                .help(i18n.t(.jumpToAppTip))
                 .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).stroke(.separator.opacity(0.5)) }
             } else {
