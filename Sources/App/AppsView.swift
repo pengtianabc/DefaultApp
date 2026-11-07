@@ -298,7 +298,7 @@ struct AppsView: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 6)], spacing: 6) {
             ForEach(exts, id: \.self) { ext in
                 let chip = chipContent(ext, highlighted: highlighted)
-                    .onTapGesture(count: 2) { focusExtension(ext) }
+                    .simultaneousGesture(TapGesture(count: 2).onEnded { focusExtension(ext) })
                     .help(i18n.t(.chipJumpTip))
                 if highlighted {
                     chip
