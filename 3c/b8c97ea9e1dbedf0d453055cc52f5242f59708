@@ -1,0 +1,14 @@
+Sources/App/SchemesView.swift
+  h_53aea25a6c6376 197-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3cb8c97ea9e1dbedf0d453055cc52f5242f59708",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
