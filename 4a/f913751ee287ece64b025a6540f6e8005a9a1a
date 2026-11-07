@@ -1,0 +1,28 @@
+README.md
+  h_53aea25a6c6376 60-62
+README.zh-CN.md
+  h_53aea25a6c6376 49-50
+Sources/App/AppState.swift
+  h_53aea25a6c6376 63-64
+Sources/App/AppsView.swift
+  h_53aea25a6c6376 259-266,350-377
+Sources/App/ContentView.swift
+  h_53aea25a6c6376 67-70
+Sources/App/I18n.swift
+  h_53aea25a6c6376 58,232-233
+Sources/App/LaunchServicesBridge.swift
+  h_53aea25a6c6376 360-380,386-387,390
+Sources/App/SchemesView.swift
+  h_53aea25a6c6376 52-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4af913751ee287ece64b025a6540f6e8005a9a1a",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
