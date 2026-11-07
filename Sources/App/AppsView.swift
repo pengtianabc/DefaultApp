@@ -256,13 +256,6 @@ struct AppsView: View {
                 if !app.supports.isEmpty {
                     supportsSection(app)
                 }
-
-                let declared = state.declaredTypes(forBundleID: app.bundleID)
-                if !declared.isEmpty {
-                    section(title: i18n.t(.appDeclaredTypes)) {
-                        declaredContent(declared)
-                    }
-                }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -332,43 +325,6 @@ struct AppsView: View {
             dropUnsetDefault(items, app: app)
             return true
         }, isTargeted: { supportsTargeted = $0 })
-    }
-
-    /// 「声明的类型」区：UTI 映射出文件后缀的渲染为可交互胶囊（双击跳转、可拖拽），
-    /// 纯协议类型（无后缀映射）保持静态文本。
-    private func declaredContent(_ utis: [String]) -> some View {
-        var exts: [String] = []
-        var bareUTIs: [String] = []
-        var seen = Set<String>()
-        for uti in utis {
-            let mapped = LaunchServices.extensions(forUTI: uti)
-            if mapped.isEmpty {
-                bareUTIs.append(uti)
-            } else {
-                for ext in mapped where !seen.contains(ext) {
-                    seen.insert(ext)
-                    exts.append(ext)
-                }
-            }
-        }
-        return VStack(alignment: .leading, spacing: 6) {
-            if !exts.isEmpty {
-                extChips(exts, highlighted: false)
-            }
-            if !bareUTIs.isEmpty {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 6)], spacing: 6) {
-                    ForEach(bareUTIs, id: \.self) { uti in
-                        Text(uti)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary.opacity(0.3)))
-                    }
-                }
-            }
-        }
     }
 
     private func extChips(_ exts: [String], highlighted: Bool) -> some View {

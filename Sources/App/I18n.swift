@@ -43,7 +43,7 @@ final class I18n {
         case tabExtensions, tabApps
         case appsSearchPlaceholder, appsEmpty
         case appCountOwns, appCountSupports
-        case appOwnsTitle, appSupportsTitle, appDeclaredTypes, chooseAppInspect
+        case appOwnsTitle, appSupportsTitle, chooseAppInspect
         case mismatchWarning, statusSetUnconfirmed, unknownApp
         case toastSetOk, toastSetUnconfirmed, toastSetFail
         case mismatchRoleAll
@@ -188,7 +188,6 @@ final class I18n {
         .appCountSupports: [.zh: "可打开 %@ 个后缀", .en: "Opens %@"],
         .appOwnsTitle: [.zh: "%@ 是这些后缀的默认打开方式", .en: "%@ is the default app for"],
         .appSupportsTitle: [.zh: "%@ 可打开这些后缀", .en: "%@ can open"],
-        .appDeclaredTypes: [.zh: "声明的文档类型", .en: "Declared document types"],
         .chooseAppInspect: [.zh: "选择任意应用…", .en: "Choose an App…"],
         .mismatchWarning: [.zh: "双击实际打开与角色注册不一致：角色注册为 %@。重新「设为默认打开方式」可修复。", .en: "Double-click opens a different app than the registered role (role: %@). Use “Set as Default” to fix."],
         .statusSetUnconfirmed: [.zh: "%@ 已写入，但系统当前仍将双击解析为「%@」——可能有其他应用在抢占，请重试或重启目标应用后再试。", .en: "%@ was written, but double-click still resolves to “%@” — another app may be overriding it. Retry or relaunch the target app."],

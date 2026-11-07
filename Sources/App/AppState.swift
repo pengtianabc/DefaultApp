@@ -326,11 +326,6 @@ final class AppState {
         appIndex.sort { $0.info.name.localizedCaseInsensitiveCompare($1.info.name) == .orderedAscending }
     }
 
-    /// 应用声明的文档类型（Info.plist CFBundleDocumentTypes / UT*TypeDeclarations）。
-    func declaredTypes(forBundleID bid: String) -> [String] {
-        LaunchServices.declaredTypes(forBundleID: bid)
-    }
-
     // MARK: - 工具
 
     static func sanitize(_ raw: String) -> String {

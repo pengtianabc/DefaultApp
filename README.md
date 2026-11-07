@@ -50,15 +50,14 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
 - **Set with verification** — after writing, the change is read back through
   the double-click resolution path to confirm it actually took effect.
 - **Apps view** — inspect app ↔ extension relations per app: which extensions
-  it owns as default, which it can open, and its declared document types.
+  it owns as default and which it can open.
 - **Cross-view navigation** — double-click an extension in the sidebar to jump
   to the Apps tab focused on its current default app (also works on the
   current-app card); double-click an extension chip in Apps to jump back to
   that extension's detail. In Apps, the “Default For” zone always shows a
-  dashed drop frame (highlighted while hovering): drop a “Can Open” or
-  “Declared Type” chip in to make that app the default, or drag a “Default
-  For” chip down to “Can Open” to unset it and hand the choice back to macOS.
-  Declared document types are mapped to real extensions and are draggable too.
+  dashed drop frame (highlighted while hovering): drop a “Can Open” chip in
+  to make that app the default, or drag a “Default For” chip down to
+  “Can Open” to unset it and hand the choice back to macOS.
 - **User vs. System marker** — each extension's handler is tagged
   **CUSTOM** (explicitly set by the user, stored in the LaunchServices user
   preference database) or **SYSTEM** (inferred from app declarations), so you
