@@ -54,6 +54,7 @@ final class I18n {
         case updateInstall, updateDownloading, updateInstalling, updateFailed, updateRetry
         case updateUnknown, updateUpToDate, updateDev, updateDevDesc
         case jumpNoDefault, jumpToAppTip, chipJumpTip, ownsEmptyHint, ownsDropDone
+        case ownsDropUnset, supportsDropHint
         case tabSchemes, schemesIntro, schemeNoHandler, schemeCandidates, schemeUnset, schemeRestoreDone, schemeSetDone
         case setDefaultShort, previewShort, previewTip, previewOpened, previewFailed
         case addExtInlineLabel, addExtInlinePlaceholder
@@ -226,6 +227,8 @@ final class I18n {
         .chipJumpTip: [.zh: "双击查看该后缀详情", .en: "Double-click to view this extension"],
         .ownsEmptyHint: [.zh: "把下方「可打开」的后缀拖到这里，设为该应用默认打开", .en: "Drag extensions here from “Can Open” to make this app their default"],
         .ownsDropDone: [.zh: "已将 %1$@ 设为「%2$@」的默认打开方式", .en: "Set %1$@ to open by default with %2$@"],
+        .ownsDropUnset: [.zh: "已取消 %@ 的默认打开设置，交还系统决定", .en: "Removed the default for %@ — back to the system choice"],
+        .supportsDropHint: [.zh: "提示：把上方「默认打开」的胶囊拖到「可打开」区，即可取消默认", .en: "Tip: drag a “Default For” chip here to unset it"],
         .tabSchemes: [.zh: "URL 协议", .en: "Schemes"],
         .schemesIntro: [.zh: "设置系统级协议的处理应用：默认浏览器（https）、邮件客户端（mailto）等。与文件后缀一样，写入后立即生效。", .en: "Set the default apps for URL schemes — browser (https), mail client (mailto), etc. Changes are effective immediately, just like extensions."],
         .schemeNoHandler: [.zh: "暂无应用处理", .en: "No handler"],

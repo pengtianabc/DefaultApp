@@ -105,6 +105,11 @@ enum LaunchServices {
         return UTType(tag: cleaned, tagClass: .filenameExtension, conformingTo: nil)?.identifier
     }
 
+    /// 反向映射：声明类型（UTI）→ 文件后缀列表。无对应后缀（如纯协议类型）返回空。
+    static func extensions(forUTI uti: String) -> [String] {
+        UTType(uti)?.tags[.filenameExtension] ?? []
+    }
+
     /// Current default handler bundle id, trying viewer then editor then any role.
     static func defaultHandlerBundleID(forExtension ext: String) -> String? {
         guard let uti = uti(forExtension: ext) else { return nil }

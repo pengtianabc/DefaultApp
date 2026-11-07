@@ -13,6 +13,10 @@ struct AppsView: View {
     @State private var sort: AppSort = .name
     @State private var refreshSpin: Double = 0
     @State private var newExt = ""
+    /// 「默认打开」区拖放悬停高亮。
+    @State private var ownsTargeted = false
+    /// 「可打开」区拖放悬停高亮。
+    @State private var supportsTargeted = false
 
     /// 应用列表排序方式。
     enum AppSort: String, CaseIterable, Identifiable {
@@ -246,39 +250,17 @@ struct AppsView: View {
                 .padding(.horizontal, 4)
 
                 if !app.owns.isEmpty || !app.supports.isEmpty {
-                    section(title: i18n.t(.appOwnsTitle, app.info.name)) {
-                        if app.owns.isEmpty {
-                            ownsEmptyTarget
-                        } else {
-                            extChips(app.owns, highlighted: true)
-                        }
-                    }
-                    .dropDestination(for: String.self) { items, _ in
-                        dropExtensions(items, app: app)
-                        return true
-                    }
+                    ownsSection(app)
                 }
 
                 if !app.supports.isEmpty {
-                    section(title: i18n.t(.appSupportsTitle, app.info.name)) {
-                        extChips(app.supports, highlighted: false)
-                    }
+                    supportsSection(app)
                 }
 
                 let declared = state.declaredTypes(forBundleID: app.bundleID)
                 if !declared.isEmpty {
                     section(title: i18n.t(.appDeclaredTypes)) {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 6)], spacing: 6) {
-                            ForEach(declared, id: \.self) { type in
-                                Text(type)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary.opacity(0.3)))
-                            }
-                        }
+                        declaredContent(declared)
                     }
                 }
             }
@@ -294,18 +276,109 @@ struct AppsView: View {
         }
     }
 
+    // MARK: - 三个后缀区块（默认打开 / 可打开 / 声明的类型）
+
+    /// 「默认打开」区：恒显示虚线投放框（空时显示提示文字），
+    /// 接收「可打开」「声明的类型」拖来的胶囊，设为该应用默认打开。
+    private func ownsSection(_ app: AppRelation) -> some View {
+        section(title: i18n.t(.appOwnsTitle, app.info.name)) {
+            Group {
+                if app.owns.isEmpty {
+                    Text(i18n.t(.ownsEmptyHint))
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                } else {
+                    extChips(app.owns, highlighted: true)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.15)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(style: StrokeStyle(lineWidth: ownsTargeted ? 2.5 : 1.5, dash: [6, 4]))
+                    .foregroundStyle(ownsTargeted ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary.opacity(0.5)))
+            )
+            .animation(.snappy(duration: 0.15), value: ownsTargeted)
+        }
+        .dropDestination(for: String.self, action: { items, _ in
+            dropSetDefault(items, app: app)
+            return true
+        }, isTargeted: { ownsTargeted = $0 })
+    }
+
+    /// 「可打开」区：接收从「默认打开」拖来的胶囊 = 取消默认，交还系统。
+    private func supportsSection(_ app: AppRelation) -> some View {
+        section(title: i18n.t(.appSupportsTitle, app.info.name)) {
+            VStack(alignment: .leading, spacing: 6) {
+                extChips(app.supports, highlighted: false)
+                Text(i18n.t(.supportsDropHint))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.08)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(style: StrokeStyle(lineWidth: supportsTargeted ? 2.5 : 1, dash: supportsTargeted ? [6, 4] : []))
+                    .foregroundStyle(supportsTargeted ? AnyShapeStyle(.orange) : AnyShapeStyle(.clear))
+            )
+            .animation(.snappy(duration: 0.15), value: supportsTargeted)
+        }
+        .dropDestination(for: String.self, action: { items, _ in
+            dropUnsetDefault(items, app: app)
+            return true
+        }, isTargeted: { supportsTargeted = $0 })
+    }
+
+    /// 「声明的类型」区：UTI 映射出文件后缀的渲染为可交互胶囊（双击跳转、可拖拽），
+    /// 纯协议类型（无后缀映射）保持静态文本。
+    private func declaredContent(_ utis: [String]) -> some View {
+        var exts: [String] = []
+        var bareUTIs: [String] = []
+        var seen = Set<String>()
+        for uti in utis {
+            let mapped = LaunchServices.extensions(forUTI: uti)
+            if mapped.isEmpty {
+                bareUTIs.append(uti)
+            } else {
+                for ext in mapped where !seen.contains(ext) {
+                    seen.insert(ext)
+                    exts.append(ext)
+                }
+            }
+        }
+        return VStack(alignment: .leading, spacing: 6) {
+            if !exts.isEmpty {
+                extChips(exts, highlighted: false)
+            }
+            if !bareUTIs.isEmpty {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 6)], spacing: 6) {
+                    ForEach(bareUTIs, id: \.self) { uti in
+                        Text(uti)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary.opacity(0.3)))
+                    }
+                }
+            }
+        }
+    }
+
     private func extChips(_ exts: [String], highlighted: Bool) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 6)], spacing: 6) {
             ForEach(exts, id: \.self) { ext in
-                let chip = chipContent(ext, highlighted: highlighted)
+                chipContent(ext, highlighted: highlighted)
                     .simultaneousGesture(TapGesture(count: 2).onEnded { focusExtension(ext) })
                     .help(i18n.t(.chipJumpTip))
-                if highlighted {
-                    chip
-                } else {
-                    // 「可打开」的胶囊可拖拽到上方「默认打开」区，一键设为默认
-                    chip.draggable(ext)
-                }
+                    // 两个方向的胶囊都可拖：默认打开 ⇄ 可打开
+                    .draggable(ext)
             }
         }
     }
@@ -334,29 +407,12 @@ struct AppsView: View {
         state.pendingExtFocus = ext
     }
 
-    /// 空「默认打开」区的拖放占位提示（同时是投放目标）。
-    private var ownsEmptyTarget: some View {
-        Text(i18n.t(.ownsEmptyHint))
-            .font(.callout)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .padding(.horizontal, 14)
-            .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.2)))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                    .foregroundStyle(.secondary.opacity(0.5))
-            )
-    }
-
-    /// 投放处理：把拖来的后缀逐个设为该应用默认打开。
-    private func dropExtensions(_ items: [String], app: AppRelation) {
+    /// 投放到「默认打开」：把拖来的后缀逐个设为该应用默认打开（已是默认的跳过）。
+    private func dropSetDefault(_ items: [String], app: AppRelation) {
         var done: [String] = []
         for raw in items {
             let ext = AppState.sanitize(raw)
-            guard !ext.isEmpty else { continue }
+            guard !ext.isEmpty, !app.owns.contains(ext) else { continue }
             state.ensureExtension(ext)
             let outcome = state.setDefault(bundleID: app.bundleID, for: ext, role: .all)
             switch outcome {
@@ -368,6 +424,24 @@ struct AppsView: View {
         }
         if !done.isEmpty {
             state.overrideStatus(i18n.t(.ownsDropDone, done.joined(separator: " "), app.info.name), success: true)
+        }
+        state.refresh()
+    }
+
+    /// 投放到「可打开」：把从「默认打开」拖来的后缀取消默认，交还系统。
+    private func dropUnsetDefault(_ items: [String], app: AppRelation) {
+        var done: [String] = []
+        for raw in items {
+            let ext = AppState.sanitize(raw)
+            guard !ext.isEmpty, app.owns.contains(ext) else { continue }
+            if state.removeDefault(for: ext) {
+                done.append(".\(ext)")
+            } else {
+                state.overrideStatus(i18n.t(.toastSetFail, app.info.name, ext), success: false)
+            }
+        }
+        if !done.isEmpty {
+            state.overrideStatus(i18n.t(.ownsDropUnset, done.joined(separator: " ")), success: true)
         }
         state.refresh()
     }

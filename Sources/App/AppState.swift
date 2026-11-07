@@ -282,6 +282,22 @@ final class AppState {
         return outcome
     }
 
+    /// 取消用户默认设置，把默认打开方式交还系统（等价 CLI 的 unset）。
+    /// 返回是否成功（本无覆盖视为成功）。
+    @discardableResult
+    func removeDefault(for raw: String) -> Bool {
+        let cleaned = Self.sanitize(raw)
+        guard !cleaned.isEmpty else { return false }
+        guard LaunchServices.removeOverride(forExtension: cleaned) else { return false }
+        ownSet.remove(cleaned.lowercased())
+        UserDefaults.standard.set(Array(ownSet), forKey: ownSetKey)
+        UserOverrides.invalidate()
+        bustQueryCaches()
+        userOverrides = UserOverrides.load()
+        rebuildAppIndex()
+        return true
+    }
+
     // MARK: - 应用 ↔ 后缀索引
 
     /// 重建应用关系索引（候选 + 实际默认，基于当前后缀列表）。
