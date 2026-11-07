@@ -357,7 +357,17 @@ enum LaunchServices {
         return nil
     }
 
+    /// 应用信息进程内缓存：icon 加载（读 .app 渲染 icns）单次 5~20ms，
+    /// candidates 列表一次要解析 N 个应用，不缓存会让每次点击卡顿几百毫秒。
+    /// 由外部变更监视器与手动 refresh 负责失效（应用安装/更新时）。
+    private static var appInfoCache: [String: AppInfo] = [:]
+
+    static func invalidateAppInfoCache() {
+        appInfoCache.removeAll()
+    }
+
     static func appInfo(forBundleID bid: String) -> AppInfo {
+        if let hit = appInfoCache[bid] { return hit }
         let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)
         var name = bid
         if let url {
@@ -370,7 +380,9 @@ enum LaunchServices {
             }
         }
         let icon = url.map { NSWorkspace.shared.icon(forFile: $0.path) }
-        return AppInfo(bundleID: bid, url: url, name: name, icon: icon)
+        let info = AppInfo(bundleID: bid, url: url, name: name, icon: icon)
+        appInfoCache[bid] = info
+        return info
     }
 
     /// 把用户输入解析为 Bundle ID，支持三种形式：

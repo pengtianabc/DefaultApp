@@ -331,7 +331,7 @@ struct AppsView: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 6)], spacing: 6) {
             ForEach(exts, id: \.self) { ext in
                 chipContent(ext, highlighted: highlighted)
-                    .simultaneousGesture(TapGesture(count: 2).onEnded { focusExtension(ext) })
+                    .overlay(DoubleClickRecognizer { focusExtension(ext) })
                     .help(i18n.t(.chipJumpTip))
                     // 两个方向的胶囊都可拖：默认打开 ⇄ 可打开
                     .draggable(ext)

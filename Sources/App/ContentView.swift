@@ -521,9 +521,7 @@ private struct SidebarRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 7))
         .onHover { hovered = $0 }
-        // 双击跳转必须用 simultaneousGesture：onTapGesture(count:2) 会独占手势，
-        // 让单击选择延迟等待双击判定，整列都会卡。
-        .simultaneousGesture(TapGesture(count: 2).onEnded {
+        .overlay(DoubleClickRecognizer {
             // 双击：跳到「应用」页查看当前默认应用
             guard let app = state.currentDefault(for: entry.ext) else {
                 state.overrideStatus(i18n.t(.jumpNoDefault, entry.ext), success: false)

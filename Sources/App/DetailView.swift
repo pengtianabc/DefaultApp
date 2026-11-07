@@ -170,7 +170,7 @@ struct DetailView: View {
         }
         .padding(16)
         .contentShape(RoundedRectangle(cornerRadius: 14))
-        .simultaneousGesture(TapGesture(count: 2).onEnded {
+        .overlay(DoubleClickRecognizer {
             // 双击：跳到「应用」页查看该应用
             state.pendingAppFocus = app.bundleID
         })

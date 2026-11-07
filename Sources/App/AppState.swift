@@ -81,7 +81,9 @@ final class AppState {
     /// 写入与外部监视到变更时立即失效。
     private var defaultCache: [String: (value: AppInfo?, time: Date)] = [:]
     private var candidatesCache: [String: (value: [AppInfo], time: Date)] = [:]
-    private static let cacheTTL: TimeInterval = 10
+    /// 查询缓存 TTL。改设置/装应用由外部监视器与自身写入即时失效缓存，
+    /// 因此 TTL 只需覆盖"重复点击/滚动"的放大场景，拉长避免每次点击都全量重查。
+    private static let cacheTTL: TimeInterval = 60
 
     /// 外部变更监视：每 4 秒 stat 一次 LaunchServices 覆盖表与 /Applications
     /// 目录的修改时间（stat 几乎零开销），有变化才重建缓存并通知各视图。
@@ -147,6 +149,7 @@ final class AppState {
         lastAppsMtime = appsM
         UserOverrides.invalidate()
         userOverrides = UserOverrides.load()
+        LaunchServices.invalidateAppInfoCache()
         bustQueryCaches()
         rebuildAppIndex()
         refreshToken = UUID()
@@ -215,6 +218,7 @@ final class AppState {
 
     func refresh() {
         UserOverrides.invalidate()
+        LaunchServices.invalidateAppInfoCache()
         bustQueryCaches()
         userOverrides = UserOverrides.load()
         refreshToken = UUID()
