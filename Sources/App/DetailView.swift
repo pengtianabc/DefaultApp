@@ -234,6 +234,9 @@ struct DetailView: View {
             Text(roleHint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(-1)
             Spacer()
         }
     }
@@ -485,6 +488,7 @@ struct ActionCandidateRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(app.name).font(.body)
+                        .lineLimit(1)
                     if isCurrent {
                         Text(i18n.t(.currentBadge))
                             .font(.caption2.weight(.bold))
@@ -498,23 +502,44 @@ struct ActionCandidateRow: View {
                     .textSelection(.enabled)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            Spacer()
+            .frame(minWidth: 0, alignment: .leading)
+            Spacer(minLength: 8)
             if !isCurrent {
-                HStack(spacing: 10) {
-                    if let onPreview {
-                        Button(action: onPreview) {
-                            Label(i18n.t(.previewShort), systemImage: "play.circle")
+                // 窄空间时降级为图标按钮，保证操作始终可用
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        if let onPreview {
+                            Button(action: onPreview) {
+                                Label(i18n.t(.previewShort), systemImage: "play.circle")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.regular)
+                            .help(i18n.t(.previewTip))
                         }
-                        .buttonStyle(.bordered)
+                        Button(action: onSetDefault) {
+                            Label(i18n.t(.setDefaultShort), systemImage: "checkmark.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
                         .controlSize(.regular)
-                        .help(i18n.t(.previewTip))
                     }
-                    Button(action: onSetDefault) {
-                        Label(i18n.t(.setDefaultShort), systemImage: "checkmark.circle.fill")
+                    HStack(spacing: 10) {
+                        if let onPreview {
+                            Button(action: onPreview) {
+                                Image(systemName: "play.circle")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.regular)
+                            .help(i18n.t(.previewTip))
+                        }
+                        Button(action: onSetDefault) {
+                            Image(systemName: "checkmark.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
+                        .help(i18n.t(.setDefaultShort))
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
                 }
             }
         }

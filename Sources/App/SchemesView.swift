@@ -44,9 +44,9 @@ struct SchemesView: View {
     var body: some View {
         HSplitView {
             schemeList
-                .frame(minWidth: 280, maxWidth: 380)
+                .frame(minWidth: 230, maxWidth: 360)
             detailArea
-                .frame(minWidth: 560)
+                .frame(minWidth: 520)
                 .layoutPriority(1)
         }
         .task(id: state.refreshToken.uuidString) { await reloadAll() }

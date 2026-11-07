@@ -12,10 +12,18 @@ enum Snapshotter {
     static var isActive: Bool { path != nil }
 
     /// 调整窗口到固定尺寸并前置，保证截图构图一致。
+    /// 环境变量 DEFAULTAPP_SNAPSHOT_SIZE=800x592 可指定窗口框尺寸（仅截图模式）。
     @MainActor
     static func stage() {
         guard let window = NSApp.windows.first else { return }
-        window.setFrame(NSRect(x: 140, y: 60, width: 1120, height: 720), display: true)
+        var frame = NSRect(x: 140, y: 60, width: 1120, height: 720)
+        if let env = ProcessInfo.processInfo.environment["DEFAULTAPP_SNAPSHOT_SIZE"] {
+            let parts = env.split(separator: "x").compactMap { Double($0) }
+            if parts.count == 2, parts[0] >= 400, parts[1] >= 300 {
+                frame.size = NSSize(width: parts[0], height: parts[1])
+            }
+        }
+        window.setFrame(frame, display: true)
         window.orderFrontRegardless()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate()

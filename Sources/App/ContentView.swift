@@ -49,7 +49,7 @@ struct ContentView: View {
 
             statusBar
         }
-        .frame(minWidth: 940, minHeight: 620)
+        .frame(minWidth: 800, minHeight: 540)
         .tint(.indigo)
         .task {
             if Snapshotter.isActive {
@@ -112,9 +112,9 @@ struct ContentView: View {
     private var extensionsSplit: some View {
         HSplitView {
             sidebar
-                .frame(minWidth: 280, maxWidth: 400)
+                .frame(minWidth: 240, maxWidth: 380)
             detailArea
-                .frame(minWidth: 600)
+                .frame(minWidth: 520)
                 .layoutPriority(1)
         }
     }

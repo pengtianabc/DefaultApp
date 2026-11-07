@@ -9,8 +9,9 @@ struct DefaultApp: App {
             ContentView()
                 .environment(state)
                 .environment(I18n.shared)
-                .frame(minWidth: 940, minHeight: 580)
+                .frame(minWidth: 800, minHeight: 540)
         }
+        .windowResizability(.contentMinSize)
         .defaultSize(width: 1040, height: 640)
     }
 }

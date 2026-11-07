@@ -48,9 +48,9 @@ struct AppsView: View {
     var body: some View {
         HSplitView {
             appList
-                .frame(minWidth: 270, maxWidth: 400)
+                .frame(minWidth: 230, maxWidth: 380)
             detailArea
-                .frame(minWidth: 560)
+                .frame(minWidth: 520)
                 .layoutPriority(1)
         }
     }
