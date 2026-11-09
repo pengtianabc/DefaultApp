@@ -333,6 +333,9 @@ private struct SchemeRow: View {
                 )
             Text("\(scheme):")
                 .font(.body.monospaced())
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .layoutPriority(1)
             Spacer(minLength: 6)
             if let handler {
                 if let icon = handler.icon {
@@ -349,5 +352,6 @@ private struct SchemeRow: View {
             }
         }
         .padding(.vertical, 2)
+        .help(Text("\(scheme)\n\(handler.map { "\($0.name) (\($0.bundleID))" } ?? "—")"))
     }
 }
