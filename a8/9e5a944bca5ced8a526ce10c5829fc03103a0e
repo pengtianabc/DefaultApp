@@ -1,0 +1,16 @@
+Sources/App/AppsView.swift
+  h_53aea25a6c6376 352,354,356,368,372
+Sources/App/FlowLayout.swift
+  h_53aea25a6c6376 1-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a89e5a944bca5ced8a526ce10c5829fc03103a0e",
+  "prompts": {},
+  "humans": {
+    "h_53aea25a6c6376": {
+      "author": "彭添 <pengtian@intra.nsfocus.com>"
+    }
+  }
+}
