@@ -349,11 +349,11 @@ struct AppsView: View {
     }
 
     /// URL 协议胶囊：与协议页同一视觉语言（teal/blue 链接徽标），双击跳转。
-    /// 长协议名完整换行显示，不截断；悬停提示附完整协议名。
+    /// 协议数量少，流式布局按自然宽度单行完整显示；悬停提示附完整协议名。
     private func schemeChips(_ schemes: [String]) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
+        FlowLayout(spacing: 6) {
             ForEach(schemes, id: \.self) { scheme in
-                HStack(alignment: .top, spacing: 6) {
+                HStack(spacing: 6) {
                     Image(systemName: "link")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white)
@@ -365,13 +365,11 @@ struct AppsView: View {
                         )
                     Text("\(scheme):")
                         .font(.callout.monospaced())
-                        .lineLimit(nil)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false)
                 .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.25)))
                 .overlay(DoubleClickRecognizer { state.pendingSchemeFocus = scheme })
                 .linkCursorOnHover()
