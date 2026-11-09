@@ -86,6 +86,10 @@ final class AppState {
     /// 详情页一致性对比用的角色注册值缓存（避免每次切换都重复 LSCopy 查询）。
     private var roleBasedCache: [String: (value: AppInfo?, time: Date)] = [:]
     private var roleAllCache: [String: (value: AppInfo?, time: Date)] = [:]
+    /// 协议页快照与候选缓存：切 Tab 重建视图时避免全量重扫（扫所有 .app 的
+    /// Info.plist + 每协议一次 LS 查询是 Tab 切换卡顿的主因）。
+    private var schemeSnapshotCache: (schemes: [String], handlers: [String: AppInfo], overrides: Set<String>, time: Date)?
+    private var schemeCandidatesCache: [String: (value: [AppInfo], time: Date)] = [:]
     /// 查询缓存 TTL。改设置/装应用由外部监视器与自身写入即时失效缓存，
     /// 因此 TTL 只需兜底线（监视器 4 秒轮询可能漏掉的瞬时变更），
     /// 拉长避免“每次点击都全量重查”的慢路径。
@@ -136,6 +140,34 @@ final class AppState {
         return value
     }
 
+    /// 协议页快照：协议列表 + 各协议当前处理应用 + 用户覆盖集（TTL 同查询缓存，
+    /// 外部监视器/手动刷新/本工具写入时失效）。
+    func schemeSnapshot() -> (schemes: [String], handlers: [String: AppInfo], overrides: Set<String>) {
+        if let hit = schemeSnapshotCache, Date().timeIntervalSince(hit.time) < Self.cacheTTL {
+            return (hit.schemes, hit.handlers, hit.overrides)
+        }
+        let schemes = LaunchServices.allKnownSchemes()
+        let overrides = LaunchServices.schemesWithOverrides()
+        var map: [String: AppInfo] = [:]
+        for scheme in schemes {
+            if let handler = LaunchServices.schemeDefaultHandler(scheme) {
+                map[scheme] = handler
+            }
+        }
+        schemeSnapshotCache = (schemes, map, overrides, Date())
+        return (schemes, map, overrides)
+    }
+
+    /// 指定协议的候选应用（带缓存）。
+    func schemeCandidates(_ scheme: String) -> [AppInfo] {
+        if let hit = schemeCandidatesCache[scheme], Date().timeIntervalSince(hit.time) < Self.cacheTTL {
+            return hit.value
+        }
+        let value = LaunchServices.schemeHandlers(scheme)
+        schemeCandidatesCache[scheme] = (value, Date())
+        return value
+    }
+
     /// 「所有角色」槽位持有者（WorkBuddy 等抢占检测），带缓存。
     func roleAllClaimant(for ext: String) -> AppInfo? {
         if let hit = roleAllCache[ext], Date().timeIntervalSince(hit.time) < Self.cacheTTL {
@@ -151,6 +183,8 @@ final class AppState {
         candidatesCache.removeAll()
         roleBasedCache.removeAll()
         roleAllCache.removeAll()
+        schemeSnapshotCache = nil
+        schemeCandidatesCache.removeAll()
     }
 
     private static func mtime(_ path: String) -> Date? {

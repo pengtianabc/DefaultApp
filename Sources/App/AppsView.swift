@@ -340,6 +340,7 @@ struct AppsView: View {
             ForEach(exts, id: \.self) { ext in
                 chipContent(ext, highlighted: highlighted)
                     .overlay(DoubleClickRecognizer { focusExtension(ext) })
+                    .linkCursorOnHover()
                     .help(i18n.t(.chipJumpTip))
                     // 两个方向的胶囊都可拖：默认打开 ⇄ 可打开
                     .draggable(ext)
@@ -370,6 +371,7 @@ struct AppsView: View {
                 .frame(maxWidth: .infinity)
                 .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.25)))
                 .overlay(DoubleClickRecognizer { state.pendingSchemeFocus = scheme })
+                .linkCursorOnHover()
                 .help(i18n.t(.schemeJumpTip))
             }
         }

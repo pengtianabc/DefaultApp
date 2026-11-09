@@ -174,6 +174,7 @@ struct DetailView: View {
             // 双击：跳到「应用」页查看该应用
             state.pendingAppFocus = app.bundleID
         })
+        .linkCursorOnHover()
         .help(i18n.t(.jumpToAppTip))
         .background(
             Color(nsColor: .controlBackgroundColor),

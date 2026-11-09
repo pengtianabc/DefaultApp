@@ -388,6 +388,7 @@ enum LaunchServices {
     static func invalidateAppInfoCache() {
         appInfoCache.removeAll()
         schemeCache.removeAll()
+        knownSchemesCache = (nil, .distantPast)
     }
 
     static func appInfo(forBundleID bid: String) -> AppInfo {
@@ -591,7 +592,11 @@ enum LaunchServices {
     /// 动态发现所有已知协议：内置常见协议 + 已安装应用 CFBundleURLTypes 声明的 +
     /// 用户覆盖表中出现过的。不再依赖硬编码列表（代理协议 vmess/vless/trojan…
     /// 由各客户端自行声明，这里自动收集）。
+    /// 结果带进程内缓存（扫全部 .app 的 Info.plist 代价高），随应用安装/刷新失效。
     static func allKnownSchemes() -> [String] {
+        if let hit = knownSchemesCache.0, Date().timeIntervalSince(knownSchemesCache.1) < 300 {
+            return hit
+        }
         var result: [String] = []
         var seen = Set<String>()
         func append(_ raw: String) {
@@ -612,8 +617,11 @@ enum LaunchServices {
                 if let scheme = handler["LSHandlerURLScheme"] as? String { append(scheme) }
             }
         }
+        knownSchemesCache = (result, Date())
         return result
     }
+
+    private static var knownSchemesCache: ([String]?, Date) = (nil, .distantPast)
 
     /// 扫描 /Applications、Utilities、/System/Applications、~/Applications 下所有
     /// .app 的 CFBundleURLTypes，返回去重排序后的协议列表。

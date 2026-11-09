@@ -199,6 +199,7 @@ struct SchemesView: View {
                     // 双击：跳到「应用」页查看该处理应用（与后缀页当前应用卡片一致）
                     state.pendingAppFocus = current.bundleID
                 })
+                .linkCursorOnHover()
                 .help(i18n.t(.jumpToAppTip))
                 .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).stroke(.separator.opacity(0.5)) }
@@ -254,15 +255,10 @@ struct SchemesView: View {
 
     @MainActor
     private func reloadAll() async {
-        schemes = LaunchServices.allKnownSchemes()
-        overrideSchemes = LaunchServices.schemesWithOverrides()
-        var map: [String: AppInfo] = [:]
-        for scheme in schemes {
-            if let handler = LaunchServices.schemeDefaultHandler(scheme) {
-                map[scheme] = handler
-            }
-        }
-        handlers = map
+        let snap = state.schemeSnapshot()
+        schemes = snap.schemes
+        overrideSchemes = snap.overrides
+        handlers = snap.handlers
         if selected == nil { selected = schemes.first }
         await reloadCandidates()
     }
@@ -270,7 +266,7 @@ struct SchemesView: View {
     @MainActor
     private func reloadCandidates() async {
         guard let selected else { candidates = []; return }
-        candidates = LaunchServices.schemeHandlers(selected)
+        candidates = state.schemeCandidates(selected)
     }
 
     /// 临时打开：用该应用打开一个 scheme:// 测试链接，不修改任何设置。
