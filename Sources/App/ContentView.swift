@@ -511,7 +511,6 @@ private struct SidebarRow: View {
             Spacer(minLength: 6)
             sourceDot
             Text(current?.name ?? "—")
-                .textSelection(.enabled)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -525,15 +524,8 @@ private struct SidebarRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 7))
         .onHover { hovered = $0 }
-        .overlay(DoubleClickRecognizer {
-            // 双击：跳到「应用」页查看当前默认应用
-            guard let app = state.currentDefault(for: entry.ext) else {
-                state.overrideStatus(i18n.t(.jumpNoDefault, entry.ext), success: false)
-                return
-            }
-            state.pendingAppFocus = app.bundleID
-        })
-        .help(i18n.t(.jumpToAppTip))
+        // 行内不加双击跳转（体验差）与 .textSelection（光标变 I 梁且拖慢点击响应）；
+        // 复制需求由详情页覆盖。
         .task(id: "\(entry.id.uuidString)-\(state.refreshToken.uuidString)") {
             current = state.currentDefault(for: entry.ext)
         }

@@ -331,8 +331,8 @@ struct DetailView: View {
     private func reload() async {
         // current 使用与双击一致的解析；roleBased/roleAll 记录角色注册值用于一致性对比
         current = state.currentDefault(for: entry.ext)
-        roleBased = LaunchServices.defaultHandler(forExtension: entry.ext)
-        roleAll = LaunchServices.roleAllClaimant(forExtension: entry.ext)
+        roleBased = state.roleBasedDefault(for: entry.ext)
+        roleAll = state.roleAllClaimant(for: entry.ext)
         candidates = state.candidates(for: entry.ext)
         // 截图模式：展示成功提示条，演示操作反馈效果
         if Snapshotter.isActive {
