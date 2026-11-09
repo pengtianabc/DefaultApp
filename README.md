@@ -51,15 +51,15 @@ friend may send it to you) and drag `DefaultApp.app` into **Applications**.
   the double-click resolution path to confirm it actually took effect.
 - **Apps view** — inspect app ↔ extension relations per app: which extensions
   it owns as default and which it can open.
-- **Cross-view navigation** — double-click an extension in the sidebar to jump
-  to the Apps tab focused on its current default app (also works on the
-  current-app card); double-click an extension chip in Apps to jump back to
-  that extension's detail. In Apps, the “Default For” zone always shows a
-  dashed drop frame (highlighted while hovering): drop a “Can Open” chip in
-  to make that app the default, or drag a “Default For” chip down to
-  “Can Open” to unset it and hand the choice back to macOS. The app's
-  declared URL schemes are listed too — double-click one to jump to the
-  Schemes tab with it selected.
+- **Cross-view navigation** — double-click the current-app card on an
+  extension's detail to jump to the Apps tab focused on that app;
+  double-click an extension chip in Apps to jump back to that extension's
+  detail, double-click a scheme chip to jump to the Schemes tab, and
+  double-click the handler card there to jump back to Apps. In Apps, the
+  “Default For” zone always shows a dashed drop frame (highlighted while
+  hovering): drop a “Can Open” chip in to make that app the default, or drag
+  a “Default For” chip down to “Can Open” to unset it and hand the choice
+  back to macOS. The app's declared URL schemes are listed too.
 - **User vs. System marker** — each extension's handler is tagged
   **CUSTOM** (explicitly set by the user, stored in the LaunchServices user
   preference database) or **SYSTEM** (inferred from app declarations), so you
